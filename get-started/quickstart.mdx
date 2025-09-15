@@ -1,0 +1,257 @@
+---
+title: 'Quickstart Guide'
+description: 'Get started with Omniwire in 5 minutes'
+---
+
+## Overview
+
+This quickstart guide will walk you through the basic setup and your first API calls with Omniwire. By the end, you'll have created a customer, set up a wallet, and understand the core workflow.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+- Development environment set up
+- Ability to make HTTP requests (curl, Postman, or your preferred tool)
+- Access to the development server running on `localhost:3000`
+
+## Step 1: Test Your Connection
+
+First, verify you can connect to the API:
+
+```bash
+curl -X GET http://localhost:3000/ \
+  -H "Api-Key: test-api-key" \
+  -H "Content-Type: application/json"
+```
+
+If successful, you should receive a response confirming the API is accessible.
+
+## Step 2: Create Your First Customer
+
+Create an individual customer with basic information:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:3000/customers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "individual",
+    "first_name": "John",
+    "last_name": "Doe", 
+    "email": "john.doe@example.com",
+    "birth_date": "1990-01-01",
+    "residential_address": {
+      "street_line_1": "123 Main Street",
+      "city": "Portland",
+      "subdivision": "US-ME",
+      "postal_code": "04101",
+      "country": "USA"
+    },
+    "identifying_information": [
+      {
+        "type": "ssn",
+        "issuing_country": "USA", 
+        "number": "123-45-6789"
+      }
+    ],
+    "endorsements": ["base"],
+    "signed_agreement_id": "agr_test_abc123xyz"
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('http://localhost:3000/customers', {
+  method: 'POST',
+  headers: {
+    'Api-Key': 'test-api-key',
+    'Tenant-Id': 'your-tenant-uuid',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    type: 'individual',
+    first_name: 'John',
+    last_name: 'Doe',
+    email: 'john.doe@example.com',
+    birth_date: '1990-01-01',
+    residential_address: {
+      street_line_1: '123 Main Street',
+      city: 'Portland',
+      subdivision: 'US-ME',
+      postal_code: '04101',
+      country: 'USA'
+    },
+    identifying_information: [{
+      type: 'ssn',
+      issuing_country: 'USA',
+      number: '123-45-6789'
+    }],
+    endorsements: ['base'],
+    signed_agreement_id: 'agr_test_abc123xyz'
+  })
+});
+
+const customer = await response.json();
+console.log('Customer created:', customer.id);
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "id": "cust_1234567890abcdef",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@example.com",
+  "status": "active",
+  "has_accepted_terms_of_service": true,
+  "endorsements": [
+    {
+      "name": "base",
+      "status": "approved"
+    }
+  ],
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+```
+
+## Step 3: Create a Custodial Wallet
+
+Now create a Solana wallet for your customer:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/wallets \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chain": "solana"
+  }'
+```
+
+```javascript Node.js
+const walletResponse = await fetch('http://localhost:3000/customers/cust_1234567890abcdef/wallets', {
+  method: 'POST',
+  headers: {
+    'Api-Key': 'test-api-key',
+    'Tenant-Id': 'your-tenant-uuid',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    chain: 'solana'
+  })
+});
+
+const wallet = await walletResponse.json();
+console.log('Wallet created:', wallet.address);
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "id": "wallet_abcdef1234567890",
+  "chain": "solana", 
+  "address": "SolanaAddress1111111111111111111111111111111",
+  "created_at": "2024-01-15T10:31:00Z",
+  "updated_at": "2024-01-15T10:31:00Z",
+  "balances": [
+    {
+      "balance": "0.0",
+      "currency": "SOL",
+      "chain": "solana"
+    }
+  ]
+}
+```
+
+## Step 4: Set Up a Virtual Account (Optional)
+
+Create a virtual account to receive ACH deposits that automatically convert to USDC:
+
+```bash
+curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/virtual_accounts \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "currency": "usd"
+    },
+    "destination": {
+      "payment_rail": "solana",
+      "currency": "usdc", 
+      "address": "SolanaAddress1111111111111111111111111111111"
+    },
+    "developer_fee_percent": "0.5"
+  }'
+```
+
+## Step 5: Check Customer Status
+
+Verify your customer and check their KYC status:
+
+```bash
+curl -X GET http://localhost:3000/customers/cust_1234567890abcdef \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+## What's Next?
+
+Now that you've created your first customer and wallet, you can:
+
+<CardGroup cols={2}>
+  <Card title="Create Your First Transfer" href="/get-started/first-transfer">
+    Learn how to move money between different payment rails
+  </Card>
+  <Card title="Understanding Customers" href="/concepts/customers">
+    Deep dive into customer management and KYC
+  </Card>
+  <Card title="Onramp Flow" href="/guides/onramp-flow">
+    Build a complete fiat-to-crypto onramp
+  </Card>
+  <Card title="API Reference" href="/api-reference/authentication">
+    Explore all available endpoints
+  </Card>
+</CardGroup>
+
+## Development Tips
+
+### Use Mock Data
+For faster development, you can use the mock customer creation endpoint:
+
+```bash
+curl -X POST http://localhost:3000/customers/mock-create \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+This creates a customer with randomly generated but valid data.
+
+### Idempotency Keys
+Always use idempotency keys for create operations in production:
+
+```bash
+curl -X POST http://localhost:3000/customers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{ ... }'
+```
+
+## Need Help?
+
+- Check the [API Reference](/api-reference/authentication) for detailed endpoint documentation
+- Review [Core Concepts](/concepts/customers) for deeper understanding
+- See [Integration Guides](/guides/onramp-flow) for complete workflows

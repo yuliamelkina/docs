@@ -1,0 +1,457 @@
+---
+title: 'Create Your First Transfer'
+description: 'Learn how to move money between different payment rails'
+---
+
+## Overview
+
+This guide covers creating transfers, understanding different source and destination types, and handling transfer states.
+
+## How Transfers Work
+
+Transfers in Omniwire can move money between various payment rails:
+
+<CardGroup cols={2}>
+  <Card title="Traditional → Crypto" icon="arrow-right">
+    ACH, Wire, SEPA → Solana, Ethereum, etc.
+  </Card>
+  <Card title="Crypto → Traditional" icon="arrow-left">
+    Blockchain assets → ACH, Wire, bank accounts
+  </Card>
+  <Card title="Crypto → Crypto" icon="arrows-rotate">
+    Cross-chain transfers between different networks
+  </Card>
+  <Card title="Traditional → Traditional" icon="building-columns">
+    Between different fiat payment rails
+  </Card>
+</CardGroup>
+
+## Prerequisites
+
+Before creating transfers, you'll need:
+- A verified customer (`status: "active"`)
+- Appropriate endorsements for the payment rails you're using
+- For crypto destinations: a custodial wallet
+- For fiat destinations: an external bank account
+
+## Transfer Types
+
+### 1. ACH Onramp to Solana
+
+Convert USD from ACH to USDC on Solana:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:3000/transfers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "75.0",
+    "on_behalf_of": "cust_1234567890abcdef",
+    "source": {
+      "payment_rail": "ach_push", 
+      "currency": "usd"
+    },
+    "destination": {
+      "payment_rail": "solana",
+      "currency": "usdc",
+      "to_address": "SolanaDest111111111111111111111111111",
+      "wallet_id": "wallet_abcdef1234567890"
+    }
+  }'
+```
+
+```javascript Node.js
+const transfer = await fetch('http://localhost:3000/transfers', {
+  method: 'POST',
+  headers: {
+    'Api-Key': 'test-api-key',
+    'Tenant-Id': 'your-tenant-uuid',
+    'Idempotency-Key': crypto.randomUUID(),
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    amount: '75.0',
+    on_behalf_of: 'cust_1234567890abcdef',
+    source: {
+      payment_rail: 'ach_push',
+      currency: 'usd'
+    },
+    destination: {
+      payment_rail: 'solana',
+      currency: 'usdc',
+      to_address: 'SolanaDest111111111111111111111111111',
+      wallet_id: 'wallet_abcdef1234567890'
+    }
+  })
+});
+
+const transferData = await transfer.json();
+console.log('Transfer created:', transferData.id);
+```
+
+</CodeGroup>
+
+### 2. Crypto Offramp to ACH
+
+Convert USDC from Ethereum to USD in bank account:
+
+```bash
+curl -X POST http://localhost:3000/transfers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "100.0",
+    "on_behalf_of": "cust_1234567890abcdef",
+    "source": {
+      "payment_rail": "ethereum",
+      "currency": "usdc", 
+      "from_address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+    },
+    "destination": {
+      "payment_rail": "ach",
+      "currency": "usd",
+      "external_account_id": "ext_bank_123456789"
+    }
+  }'
+```
+
+### 3. Flexible Amount Transfer
+
+Create a transfer without specifying the exact amount (useful for sweeping balances):
+
+```bash
+curl -X POST http://localhost:3000/transfers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "on_behalf_of": "cust_1234567890abcdef",
+    "source": {
+      "payment_rail": "sepa",
+      "currency": "eur"
+    },
+    "destination": {
+      "payment_rail": "ethereum", 
+      "currency": "usdc",
+      "to_address": "0xb794f5ea0ba39494ce839613fffba74279579268"
+    },
+    "features": {
+      "flexible_amount": true
+    }
+  }'
+```
+
+## Transfer Response
+
+When you create a transfer, you'll receive a response like this:
+
+```json
+{
+  "id": "txfr_1234567890abcdef",
+  "on_behalf_of": "cust_1234567890abcdef", 
+  "amount": "75.0",
+  "developer_fee": "0.75",
+  "state": "awaiting_funds",
+  "source": {
+    "payment_rail": "ach_push",
+    "currency": "usd"
+  },
+  "destination": {
+    "payment_rail": "solana",
+    "currency": "usdc",
+    "to_address": "SolanaDest111111111111111111111111111",
+    "wallet_id": "wallet_abcdef1234567890"
+  },
+  "source_deposit_instructions": {
+    "payment_rail": "ach_push",
+    "amount": "75.0",
+    "currency": "usd",
+    "bank_name": "Lead Bank",
+    "bank_address": "123 Banking Street, New York, NY 10001",
+    "bank_routing_number": "101019644",
+    "bank_account_number": "1234567890123456",
+    "bank_beneficiary_name": "Omniwire Holdings LLC",
+    "bank_beneficiary_address": "456 Finance Ave, San Francisco, CA 94107"
+  },
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+```
+
+## Understanding Transfer States
+
+Transfers progress through several states during processing:
+
+<Steps>
+  <Step title="awaiting_funds">
+    Transfer created, waiting for source funds to be received
+  </Step>
+  <Step title="in_review">
+    Funds received, undergoing compliance and risk review
+  </Step>
+  <Step title="funds_received">
+    Source funds confirmed and available for processing
+  </Step>
+  <Step title="payment_submitted">
+    Destination payment has been initiated
+  </Step>
+  <Step title="payment_processed">
+    Transfer completed successfully
+  </Step>
+</Steps>
+
+### Error States
+
+<Accordion title="Error and Return States">
+- **`undeliverable`** - Unable to deliver to destination
+- **`returned`** - Payment was returned by destination network  
+- **`refunded`** - Transfer was refunded to source
+- **`error`** - Processing error occurred
+- **`canceled`** - Transfer was cancelled before completion
+</Accordion>
+
+## Deposit Instructions
+
+For transfers from traditional payment rails, you'll receive deposit instructions:
+
+### ACH Deposit Instructions
+
+```json
+{
+  "source_deposit_instructions": {
+    "payment_rail": "ach_push",
+    "amount": "75.0",
+    "currency": "usd", 
+    "bank_name": "Lead Bank",
+    "bank_routing_number": "101019644",
+    "bank_account_number": "1234567890123456",
+    "bank_beneficiary_name": "Omniwire Holdings LLC",
+    "deposit_message": "Transfer ID: txfr_1234567890abcdef"
+  }
+}
+```
+
+### Wire Transfer Instructions
+
+```json
+{
+  "source_deposit_instructions": {
+    "payment_rail": "wire",
+    "amount": "1000.0",
+    "currency": "usd",
+    "bank_name": "Lead Bank", 
+    "bank_address": "123 Banking Street, New York, NY 10001",
+    "bank_routing_number": "101019644",
+    "bank_account_number": "9876543210987654",
+    "bank_beneficiary_name": "Omniwire Holdings LLC",
+    "bank_beneficiary_address": "456 Finance Ave, San Francisco, CA 94107"
+  }
+}
+```
+
+## Payment Rail Options
+
+### Source Payment Rails
+
+<Accordion title="Traditional Banking">
+- **`ach_push`** - ACH push payments (US)
+- **`ach`** - Standard ACH (US)
+- **`wire`** - Wire transfers (US)
+- **`sepa`** - Single Euro Payments Area (EU)
+- **`swift`** - International wire transfers
+- **`spei`** - Sistema de Pagos Electrónicos Interbancarios (Mexico)
+</Accordion>
+
+<Accordion title="Blockchain Networks">
+- **`solana`** - Solana network
+- **`ethereum`** - Ethereum network
+- **`polygon`** - Polygon network
+- **`avalanche`** - Avalanche C-Chain
+- **`arbitrum`** - Arbitrum network
+- **`optimism`** - Optimism network
+</Accordion>
+
+### Destination Payment Rails
+
+Same options as source rails, plus:
+- **External bank accounts** via `external_account_id`
+- **Custodial wallets** via `wallet_id`
+- **Specific addresses** via `to_address`
+
+## Transfer Fees
+
+Transfers include developer fees and network fees:
+
+### Fee Structure
+
+```json
+{
+  "receipt": {
+    "initial_amount": "100.0",
+    "developer_fee": "1.0",
+    "exchange_fee": "0.5", 
+    "subtotal_amount": "98.5",
+    "gas_fee": "0.02",
+    "final_amount": "98.48",
+    "destination_tx_hash": "0x1234567890abcdef..."
+  }
+}
+```
+
+### Fee Types
+
+- **Developer Fee**: Your configured fee percentage
+- **Exchange Fee**: Currency conversion costs  
+- **Gas Fee**: Blockchain transaction costs
+- **Network Fee**: Payment rail processing fees
+
+## Tracking Transfers
+
+### Get Transfer Status
+
+```bash
+curl -X GET http://localhost:3000/transfers/txfr_1234567890abcdef \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+### List All Transfers
+
+```bash
+curl -X GET http://localhost:3000/transfers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+## Special Transfer Features
+
+### Reference Messages
+
+Add reference information for certain payment rails:
+
+```json
+{
+  "destination": {
+    "payment_rail": "wire",
+    "currency": "usd",
+    "external_account_id": "ext_123",
+    "wire_message": "Invoice payment #12345"
+  }
+}
+```
+
+### SWIFT Charges
+
+For international transfers, specify charge handling:
+
+```json
+{
+  "destination": {
+    "payment_rail": "swift",
+    "currency": "eur",
+    "external_account_id": "ext_123",
+    "swift_charges": "our"
+  }
+}
+```
+
+Options:
+- **`our`** - All charges borne by sender
+- **`sha`** - Charges shared between sender and recipient
+
+### Blockchain Memos
+
+Add memos for blockchain transfers:
+
+```json
+{
+  "destination": {
+    "payment_rail": "solana",
+    "currency": "usdc", 
+    "to_address": "SolanaAddress111111111111111111111111111",
+    "blockchain_memo": "Payment for services"
+  }
+}
+```
+
+## Error Handling
+
+### Common Transfer Errors
+
+<Accordion title="Insufficient Customer Endorsements">
+```json
+{
+  "statusCode": 400,
+  "message": "Customer lacks required endorsement for ACH transfers",
+  "error": "Bad Request"
+}
+```
+</Accordion>
+
+<Accordion title="Invalid Payment Rail Combination">
+```json
+{
+  "statusCode": 400,
+  "message": "Cannot convert EUR directly to SOL",
+  "error": "Bad Request"
+}
+```
+</Accordion>
+
+<Accordion title="Missing External Account">
+```json
+{
+  "statusCode": 404,
+  "message": "External account not found",
+  "error": "Not Found"
+}
+```
+</Accordion>
+
+## Best Practices
+
+### Amount Handling
+- Use string values for amounts to avoid floating-point precision issues
+- Include appropriate decimal places for the currency
+- Consider minimum and maximum transfer limits
+
+### Customer Verification
+- Always verify customer status is `active` before creating transfers
+- Check that required endorsements are `approved`
+- Validate external account ownership
+
+### Error Recovery
+- Implement retry logic for transient failures
+- Handle state transitions gracefully
+- Provide clear user messaging for different error conditions
+
+### Compliance
+- Store transfer purposes and references for audit trails
+- Implement appropriate KYC/AML checks based on amounts
+- Consider regulatory requirements for different payment rails
+
+## Next Steps
+
+Now that you understand transfers, explore related concepts:
+
+<CardGroup cols={2}>
+  <Card title="Virtual Accounts" href="/concepts/virtual-accounts">
+    Set up accounts that automatically create transfers
+  </Card>
+  <Card title="External Accounts" href="/concepts/external-accounts">
+    Manage customer bank accounts for offramp destinations
+  </Card>
+  <Card title="Onramp Flow" href="/guides/onramp-flow">
+    Build a complete fiat-to-crypto conversion flow
+  </Card>
+  <Card title="Offramp Flow" href="/guides/offramp-flow">
+    Create crypto-to-fiat withdrawal experiences
+  </Card>
+</CardGroup>

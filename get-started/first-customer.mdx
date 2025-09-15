@@ -1,0 +1,390 @@
+---
+title: 'Create Your First Customer'
+description: 'Learn how to onboard customers with KYC verification'
+---
+
+## Overview
+
+This guide walks you through creating customers, understanding KYC requirements, managing endorsements, and handling verification status.
+
+## Required Information
+
+To create an individual customer, you'll need:
+
+### Personal Details
+- Full name (first and last name)
+- Email address
+- Date of birth (must be 18+ years old)
+- Residential address
+
+### Identifying Information
+- Social Security Number (for US customers)
+- Government-issued ID details
+
+### Legal Requirements
+- Signed Terms of Service agreement ID
+- Requested endorsements (payment rail permissions)
+
+## Creating a Customer
+
+### Basic Customer Creation
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:3000/customers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "individual",
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "email": "alice.johnson@example.com",
+    "birth_date": "1985-03-15",
+    "residential_address": {
+      "street_line_1": "456 Oak Avenue",
+      "street_line_2": "Apt 3B",
+      "city": "San Francisco",
+      "subdivision": "US-CA",
+      "postal_code": "94102",
+      "country": "USA"
+    },
+    "identifying_information": [
+      {
+        "type": "ssn",
+        "issuing_country": "USA",
+        "number": "987-65-4321"
+      }
+    ],
+    "endorsements": ["base", "ach"],
+    "signed_agreement_id": "agr_prod_xyz789abc"
+  }'
+```
+
+```javascript Node.js
+const customer = await fetch('http://localhost:3000/customers', {
+  method: 'POST',
+  headers: {
+    'Api-Key': 'test-api-key',
+    'Tenant-Id': 'your-tenant-uuid',
+    'Idempotency-Key': crypto.randomUUID(),
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    type: 'individual',
+    first_name: 'Alice',
+    last_name: 'Johnson', 
+    email: 'alice.johnson@example.com',
+    birth_date: '1985-03-15',
+    residential_address: {
+      street_line_1: '456 Oak Avenue',
+      street_line_2: 'Apt 3B',
+      city: 'San Francisco',
+      subdivision: 'US-CA',
+      postal_code: '94102',
+      country: 'USA'
+    },
+    identifying_information: [{
+      type: 'ssn',
+      issuing_country: 'USA',
+      number: '987-65-4321'
+    }],
+    endorsements: ['base', 'ach'],
+    signed_agreement_id: 'agr_prod_xyz789abc'
+  })
+});
+
+const customerData = await customer.json();
+console.log('Customer created:', customerData);
+```
+
+```python Python
+import requests
+import uuid
+
+response = requests.post(
+    'http://localhost:3000/customers',
+    headers={
+        'Api-Key': 'test-api-key',
+        'Tenant-Id': 'your-tenant-uuid',
+        'Idempotency-Key': str(uuid.uuid4()),
+        'Content-Type': 'application/json'
+    },
+    json={
+        'type': 'individual',
+        'first_name': 'Alice',
+        'last_name': 'Johnson',
+        'email': 'alice.johnson@example.com',
+        'birth_date': '1985-03-15',
+        'residential_address': {
+            'street_line_1': '456 Oak Avenue',
+            'street_line_2': 'Apt 3B',
+            'city': 'San Francisco',
+            'subdivision': 'US-CA',
+            'postal_code': '94102',
+            'country': 'USA'
+        },
+        'identifying_information': [{
+            'type': 'ssn',
+            'issuing_country': 'USA',
+            'number': '987-65-4321'
+        }],
+        'endorsements': ['base', 'ach'],
+        'signed_agreement_id': 'agr_prod_xyz789abc'
+    }
+)
+
+customer = response.json()
+print(f"Customer created: {customer['id']}")
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "id": "cust_alice_j_1234567890",
+  "first_name": "Alice",
+  "last_name": "Johnson",
+  "email": "alice.johnson@example.com",
+  "status": "under_review",
+  "has_accepted_terms_of_service": true,
+  "rejection_reasons": [],
+  "requirements_due": ["identity_verification"],
+  "future_requirements_due": [],
+  "endorsements": [
+    {
+      "name": "base",
+      "status": "approved",
+      "additional_requirements": []
+    },
+    {
+      "name": "ach",
+      "status": "pending",
+      "additional_requirements": ["bank_account_verification"]
+    }
+  ],
+  "created_at": "2024-01-15T14:30:00Z",
+  "updated_at": "2024-01-15T14:30:00Z"
+}
+```
+
+## Understanding Customer Status
+
+Customer status indicates their verification and compliance state:
+
+<Accordion title="Status Values">
+- **`active`** - Fully verified and can use all approved endorsements
+- **`under_review`** - Initial verification in progress
+- **`awaiting_questionnaire`** - Additional information needed
+- **`awaiting_ubo`** - Ultimate beneficial owner information required
+- **`incomplete`** - Missing required information
+- **`not_started`** - Customer created but verification not begun
+- **`paused`** - Verification temporarily halted
+- **`rejected`** - KYC verification failed
+- **`offboarded`** - Customer account closed
+</Accordion>
+
+## Endorsements
+
+Endorsements are permissions for specific payment rails and features:
+
+### Available Endorsements
+
+<CardGroup cols={2}>
+  <Card title="base" icon="circle-check">
+    Basic platform access - required for all customers
+  </Card>
+  <Card title="ach" icon="building-columns">
+    ACH (Automated Clearing House) transfers
+  </Card>
+  <Card title="wire" icon="bolt">
+    Wire transfer capabilities
+  </Card>
+  <Card title="swift" icon="globe">
+    International SWIFT transfers
+  </Card>
+  <Card title="sepa" icon="euro-sign">
+    Single Euro Payments Area transfers
+  </Card>
+  <Card title="ach_same_day" icon="clock">
+    Same-day ACH processing
+  </Card>
+  <Card title="ach_push" icon="arrow-up">
+    ACH push payment capabilities
+  </Card>
+  <Card title="spei" icon="peso-sign">
+    Mexican SPEI instant transfers
+  </Card>
+</CardGroup>
+
+### Endorsement Status
+
+Each endorsement has its own status:
+
+- **`approved`** - Ready to use
+- **`pending`** - Under review
+- **`under_review`** - Being processed
+- **`incomplete`** - Additional requirements needed
+- **`rejected`** - Not approved
+- **`revoked`** - Previously approved but now removed
+
+## Address Requirements
+
+### US Addresses
+For US customers, use ISO 3166-2 subdivision codes with country prefix:
+
+```json
+{
+  "residential_address": {
+    "street_line_1": "123 Main Street",
+    "street_line_2": "Suite 100",
+    "city": "New York",
+    "subdivision": "US-NY",
+    "postal_code": "10001",
+    "country": "USA"
+  }
+}
+```
+
+### Common US Subdivision Codes
+- **US-CA** - California
+- **US-NY** - New York
+- **US-TX** - Texas
+- **US-FL** - Florida
+- **US-IL** - Illinois
+
+## Managing Customer Information
+
+### Retrieving Customer Details
+
+Check customer status and requirements:
+
+```bash
+curl -X GET http://localhost:3000/customers/cust_alice_j_1234567890 \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+### Updating Customer Information
+
+Update customer details when needed:
+
+```bash
+curl -X PUT http://localhost:3000/customers/cust_alice_j_1234567890 \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice.newemail@example.com",
+    "residential_address": {
+      "street_line_1": "789 New Street",
+      "city": "Los Angeles", 
+      "subdivision": "US-CA",
+      "postal_code": "90210",
+      "country": "USA"
+    }
+  }'
+```
+
+## Development & Testing
+
+### Mock Customer Creation
+
+For development, use the mock endpoint to create customers with generated data:
+
+```bash
+curl -X POST http://localhost:3000/customers/mock-create \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)"
+```
+
+This creates a customer with realistic but fake data for testing purposes.
+
+### Listing Customers
+
+View all customers in your tenant:
+
+```bash
+curl -X GET http://localhost:3000/customers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+## Error Handling
+
+### Common Validation Errors
+
+<Accordion title="Age Requirement">
+```json
+{
+  "statusCode": 400,
+  "message": "Customer must be at least 18 years old",
+  "error": "Bad Request"
+}
+```
+</Accordion>
+
+<Accordion title="Invalid Address">
+```json
+{
+  "statusCode": 400, 
+  "message": "Invalid subdivision code. Use format: US-CA",
+  "error": "Bad Request"
+}
+```
+</Accordion>
+
+<Accordion title="Missing Agreement">
+```json
+{
+  "statusCode": 400,
+  "message": "signed_agreement_id is required",
+  "error": "Bad Request"
+}
+```
+</Accordion>
+
+## Best Practices
+
+### Data Validation
+- Always validate email addresses before submission
+- Ensure birth dates indicate customers are 18+ years old
+- Use correct ISO country and subdivision codes
+- Verify SSN format for US customers
+
+### Security
+- Never log or store sensitive identifying information
+- Use HTTPS in production environments
+- Implement proper error handling for PII
+- Consider data retention and deletion policies
+
+### User Experience
+- Collect Terms of Service acceptance before API calls
+- Provide clear messaging about verification requirements
+- Show progress indicators for endorsement status
+- Handle pending and review states gracefully
+
+## Next Steps
+
+Once you've created customers, you can:
+
+<CardGroup cols={2}>
+  <Card title="Create Wallets" href="/concepts/wallets">
+    Set up custodial wallets for your customers
+  </Card>
+  <Card title="Set up Virtual Accounts" href="/concepts/virtual-accounts">
+    Create accounts for receiving traditional banking deposits
+  </Card>
+  <Card title="First Transfer" href="/get-started/first-transfer">
+    Move money between different payment rails
+  </Card>
+  <Card title="API Reference" href="/api-reference/authentication">
+    Explore detailed API documentation
+  </Card>
+</CardGroup>

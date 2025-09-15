@@ -1,22 +1,129 @@
 ---
-title: "Introduction"
+title: 'Welcome to Omniwire'
+description: 'The modern financial infrastructure platform for businesses'
 ---
 
-Omniwire makes it simple to integrate stablecoin payments directly into your product. Our APIs let you move money at internet speed with global coverage — across both fiat rails and digital assets.
+<img
+  className="block dark:hidden"
+  src="/images/hero.png"
+  alt="Omniwire Platform"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero.png"
+  alt="Omniwire Platform"
+/>
 
-Whether you’re building global payment flows, launching a new card program, or managing wallets at scale, Omniwire gives you the building blocks to create seamless financial experiences.
+## What is Omniwire?
 
-This documentation will walk you through our APIs, highlight best practices, and help you launch faster.
+Omniwire is a financial infrastructure platform that bridges traditional banking and cryptocurrency ecosystems. Our APIs enable businesses to seamlessly onboard customers, manage custodial crypto wallets, and facilitate conversions between fiat currencies and digital assets through automated virtual accounts and transfer orchestration.
 
-With Omniwire Payments, you can:
+## Why Choose Omniwire?
 
-- **Send & receive payments**\
-  Transfer funds globally through traditional rails, supported stablecoins, or digital assets.
-- **Virtual accounts**\
-  Instantly open deposit accounts (USD, EUR, MXN) for your users with local banking details.
-- **Secure custody**\
-  Provide custodial wallets that safely hold user balances in stablecoins.
-- **Issue stablecoins**\
-  Deploy branded stablecoins or leverage USDB to earn yield on stored balances.
-- **Card issuing**\
-  Allow your users to spend directly from their stablecoin accounts with Visa-enabled virtual cards.
+<CardGroup cols={2}>
+  <Card title="Crypto-Fiat Bridge" icon="bridge">
+    Seamlessly connect traditional banking with blockchain networks
+  </Card>
+  <Card title="Custodial Wallet Management" icon="wallet">
+    Multi-chain wallet creation and management with automated key security
+  </Card>
+  <Card title="Automated Conversions" icon="arrows-rotate">
+    Virtual accounts that automatically convert ACH/Wire deposits to crypto
+  </Card>
+  <Card title="Compliant Onboarding" icon="shield-check">
+    Built-in KYC/AML compliance and customer verification workflows
+  </Card>
+</CardGroup>
+
+## Core Capabilities
+
+### Customer Onboarding & KYC
+Create customers with comprehensive identity verification, document collection, and compliance screening. Manage endorsements for different payment rails and track verification status through automated workflows.
+
+### Multi-Chain Custodial Wallets  
+Generate and manage custodial wallets across Solana, Ethereum, Polygon, Arbitrum, and other major blockchain networks. Handle private key security, transaction signing, and real-time balance tracking automatically.
+
+### Virtual Banking Accounts
+Provide customers with unique ACH and Wire account details that automatically convert incoming fiat deposits to cryptocurrency and deliver to specified wallet addresses.
+
+### Cross-Rail Transfers
+Move funds between traditional banking systems (ACH, Wire, SEPA) and blockchain networks with automatic currency conversion, optimal routing, and comprehensive fee transparency.
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start Guide"
+    icon="rocket"
+    href="/get-started/quickstart"
+  >
+    Create your first customer and wallet in under 10 minutes
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/authentication"
+  >
+    Complete technical documentation for all endpoints
+  </Card>
+  <Card
+    title="Core Concepts"
+    icon="lightbulb"
+    href="/concepts/customers"
+  >
+    Understand customers, wallets, transfers, and virtual accounts
+  </Card>
+  <Card
+    title="Integration Guides"
+    icon="book-open"
+    href="/guides/onramp-flow"
+  >
+    Build complete onramp and offramp experiences
+  </Card>
+</CardGroup>
+
+## Popular Integration Patterns
+
+### Crypto Onramp Services
+Enable customers to convert fiat currency to cryptocurrency through ACH or Wire transfers. Automatically deliver converted crypto to custodial wallets across multiple blockchain networks.
+
+### Digital Asset Offramp
+Allow customers to convert cryptocurrency holdings back to fiat and withdraw to their verified bank accounts through automated liquidation addresses or direct transfers.
+
+### Multi-Chain Wallet Infrastructure  
+Provide custodial wallet services across Solana, Ethereum, and other networks with secure key management, balance tracking, and transaction orchestration.
+
+### Compliant Crypto Business
+Build KYC-compliant cryptocurrency services with automated customer verification, document collection, and regulatory reporting capabilities.
+
+## Next Steps
+
+Ready to start building with Omniwire? Here's what to do next:
+
+<Steps>
+  <Step title="Understand the API">
+    Learn about customers, wallets, transfers, and virtual accounts
+  </Step>
+  <Step title="Set Up Development">
+    Get your API credentials and start making requests to localhost:3000
+  </Step>
+  <Step title="Create Your First Customer">
+    Test the KYC onboarding flow with customer creation and verification
+  </Step>
+  <Step title="Build Onramp/Offramp">
+    Implement complete crypto-fiat conversion experiences
+  </Step>
+</Steps>
+
+## Need Help?
+
+Our team is here to support you every step of the way:
+
+- **Comprehensive Documentation**: Detailed guides for every API endpoint and concept
+- **Development Environment**: Local API server for safe development and testing
+- **Code Examples**: Complete integration examples in multiple programming languages
+- **Best Practices**: Security, compliance, and performance guidance
+
+<Card title="Get Started Now" href="/get-started/quickstart" icon="arrow-right">
+  Create your first customer and wallet in 10 minutes
+</Card>

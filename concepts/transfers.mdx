@@ -1,0 +1,729 @@
+---
+title: 'Transfers'
+description: 'Move money between different payment rails and currencies'
+---
+
+## Overview
+
+Transfers are the core mechanism for moving money in Omniwire. They can move funds between traditional banking systems (ACH, Wire, SEPA) and blockchain networks (Solana, Ethereum, etc.), handling currency conversion and routing automatically.
+
+## How Transfers Work
+
+<CardGroup cols={2}>
+  <Card title="Multi-Rail Support" icon="route">
+    Connect traditional banking with blockchain networks seamlessly
+  </Card>
+  <Card title="Automatic Routing" icon="arrow-right-arrow-left">
+    Omniwire handles optimal path selection and execution
+  </Card>
+  <Card title="Currency Conversion" icon="exchange">
+    Built-in FX and crypto conversion with transparent rates
+  </Card>
+  <Card title="Real-Time Tracking" icon="eye">
+    Monitor transfer progress through all stages
+  </Card>
+</CardGroup>
+
+## Transfer Types
+
+### 1. Fiat → Crypto (Onramp)
+
+Convert traditional currency to cryptocurrency:
+
+<Accordion title="ACH → Solana USDC">
+```json
+{
+  "amount": "100.0",
+  "source": {
+    "payment_rail": "ach_push",
+    "currency": "usd"
+  },
+  "destination": {
+    "payment_rail": "solana", 
+    "currency": "usdc",
+    "to_address": "SolanaAddress111111111111111111111111111"
+  }
+}
+```
+</Accordion>
+
+<Accordion title="Wire → Ethereum USDC">
+```json
+{
+  "amount": "5000.0",
+  "source": {
+    "payment_rail": "wire",
+    "currency": "usd"
+  },
+  "destination": {
+    "payment_rail": "ethereum",
+    "currency": "usdc", 
+    "to_address": "0x742d35Cc6645C1D91Cc0b1234567890abcdef123"
+  }
+}
+```
+</Accordion>
+
+### 2. Crypto → Fiat (Offramp)
+
+Convert cryptocurrency to traditional currency:
+
+<Accordion title="Ethereum USDC → ACH">
+```json
+{
+  "amount": "1000.0",
+  "source": {
+    "payment_rail": "ethereum",
+    "currency": "usdc",
+    "from_address": "0x742d35Cc6645C1D91Cc0b1234567890abcdef123"
+  },
+  "destination": {
+    "payment_rail": "ach",
+    "currency": "usd",
+    "external_account_id": "ext_bank_account_123"
+  }
+}
+```
+</Accordion>
+
+<Accordion title="Solana USDC → Wire">
+```json
+{
+  "amount": "2500.0", 
+  "source": {
+    "payment_rail": "solana",
+    "currency": "usdc",
+    "from_address": "SolanaAddress111111111111111111111111111"
+  },
+  "destination": {
+    "payment_rail": "wire",
+    "currency": "usd",
+    "external_account_id": "ext_bank_account_456"
+  }
+}
+```
+</Accordion>
+
+### 3. Cross-Chain Transfers
+
+Move assets between different blockchain networks:
+
+```json
+{
+  "amount": "500.0",
+  "source": {
+    "payment_rail": "ethereum",
+    "currency": "usdc",
+    "from_address": "0x742d35Cc6645C1D91Cc0b1234567890abcdef123"
+  },
+  "destination": {
+    "payment_rail": "solana", 
+    "currency": "usdc",
+    "to_address": "SolanaAddress111111111111111111111111111"
+  }
+}
+```
+
+### 4. Traditional Banking Transfers
+
+Move money between different fiat payment rails:
+
+```json
+{
+  "amount": "750.0",
+  "source": {
+    "payment_rail": "sepa",
+    "currency": "eur"
+  },
+  "destination": {
+    "payment_rail": "wire",
+    "currency": "usd",
+    "external_account_id": "ext_us_bank_789"
+  }
+}
+```
+
+## Transfer States
+
+Transfers progress through several states during processing:
+
+<Steps>
+  <Step title="awaiting_funds">
+    Transfer created, waiting for source funds to arrive
+  </Step>
+  <Step title="in_review">
+    Funds received, undergoing compliance screening
+  </Step>
+  <Step title="funds_received">  
+    Source funds confirmed and available for processing
+  </Step>
+  <Step title="payment_submitted">
+    Destination payment has been initiated
+  </Step>
+  <Step title="payment_processed">
+    Transfer completed successfully
+  </Step>
+</Steps>
+
+### Error States
+
+<CardGroup cols={2}>
+  <Card title="undeliverable" icon="exclamation-triangle">
+    Cannot deliver to destination address/account
+  </Card>
+  <Card title="returned" icon="rotate-left">
+    Payment returned by destination network
+  </Card>
+  <Card title="refunded" icon="arrow-left">
+    Transfer refunded to source
+  </Card>
+  <Card title="error" icon="x-circle">
+    Processing error occurred
+  </Card>
+  <Card title="canceled" icon="ban">
+    Transfer cancelled before completion
+  </Card>
+</CardGroup>
+
+## Creating Transfers
+
+### Basic Transfer Creation
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:3000/transfers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "100.0",
+    "on_behalf_of": "cust_1234567890abcdef",
+    "source": {
+      "payment_rail": "ach_push",
+      "currency": "usd"
+    },
+    "destination": {
+      "payment_rail": "solana",
+      "currency": "usdc", 
+      "to_address": "SolanaDestination111111111111111111111111111",
+      "wallet_id": "wallet_solana_123456"
+    }
+  }'
+```
+
+```javascript Node.js
+const transfer = await fetch('http://localhost:3000/transfers', {
+  method: 'POST',
+  headers: {
+    'Api-Key': 'test-api-key',
+    'Tenant-Id': 'your-tenant-uuid',
+    'Idempotency-Key': crypto.randomUUID(),
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    amount: '100.0',
+    on_behalf_of: 'cust_1234567890abcdef',
+    source: {
+      payment_rail: 'ach_push',
+      currency: 'usd'
+    },
+    destination: {
+      payment_rail: 'solana',
+      currency: 'usdc',
+      to_address: 'SolanaDestination111111111111111111111111111',
+      wallet_id: 'wallet_solana_123456'
+    }
+  })
+});
+
+const transferData = await transfer.json();
+console.log('Transfer created:', transferData.id);
+```
+
+```python Python
+import requests
+import uuid
+
+response = requests.post(
+    'http://localhost:3000/transfers',
+    headers={
+        'Api-Key': 'test-api-key',
+        'Tenant-Id': 'your-tenant-uuid',
+        'Idempotency-Key': str(uuid.uuid4()),
+        'Content-Type': 'application/json'
+    },
+    json={
+        'amount': '100.0',
+        'on_behalf_of': 'cust_1234567890abcdef',
+        'source': {
+            'payment_rail': 'ach_push',
+            'currency': 'usd'
+        },
+        'destination': {
+            'payment_rail': 'solana',
+            'currency': 'usdc',
+            'to_address': 'SolanaDestination111111111111111111111111111',
+            'wallet_id': 'wallet_solana_123456'
+        }
+    }
+)
+
+transfer = response.json()
+print(f'Transfer created: {transfer["id"]}')
+```
+
+</CodeGroup>
+
+### Flexible Amount Transfers
+
+Create transfers without specifying exact amounts (useful for balance sweeps):
+
+```json
+{
+  "on_behalf_of": "cust_1234567890abcdef",
+  "source": {
+    "payment_rail": "ethereum",
+    "currency": "usdc", 
+    "from_address": "0x742d35Cc6645C1D91Cc0b1234567890abcdef123"
+  },
+  "destination": {
+    "payment_rail": "ach",
+    "currency": "usd",
+    "external_account_id": "ext_bank_account_123"
+  },
+  "features": {
+    "flexible_amount": true
+  }
+}
+```
+
+## Deposit Instructions
+
+When transferring from traditional payment rails, you'll receive deposit instructions:
+
+### ACH Deposit Instructions
+
+```json
+{
+  "source_deposit_instructions": {
+    "payment_rail": "ach_push",
+    "amount": "100.0",
+    "currency": "usd",
+    "bank_name": "Lead Bank", 
+    "bank_routing_number": "101019644",
+    "bank_account_number": "1234567890123456",
+    "bank_beneficiary_name": "Omniwire Holdings LLC",
+    "deposit_message": "Transfer ID: txfr_1234567890abcdef"
+  }
+}
+```
+
+### Wire Transfer Instructions
+
+```json
+{
+  "source_deposit_instructions": {
+    "payment_rail": "wire",
+    "amount": "5000.0",
+    "currency": "usd",
+    "bank_name": "Lead Bank",
+    "bank_address": "123 Banking Street, New York, NY 10001",
+    "bank_routing_number": "101019644", 
+    "bank_account_number": "9876543210987654",
+    "bank_beneficiary_name": "Omniwire Holdings LLC",
+    "bank_beneficiary_address": "456 Finance Ave, San Francisco, CA 94107"
+  }
+}
+```
+
+### SEPA Instructions
+
+```json
+{
+  "source_deposit_instructions": {
+    "payment_rail": "sepa",
+    "amount": "1000.0",
+    "currency": "eur",
+    "bank_name": "European Partner Bank",
+    "bank_iban": "DE89370400440532013000",
+    "bank_bic": "COBADEFFXXX", 
+    "bank_beneficiary_name": "Omniwire Europe Ltd",
+    "sepa_reference": "txfr_1234567890abcdef"
+  }
+}
+```
+
+## Transfer Receipts
+
+Completed transfers include detailed fee breakdowns:
+
+```json
+{
+  "receipt": {
+    "initial_amount": "100.0",
+    "developer_fee": "0.50",
+    "exchange_fee": "0.25", 
+    "subtotal_amount": "99.25",
+    "gas_fee": "0.02",
+    "final_amount": "99.23",
+    "destination_tx_hash": "0x1234567890abcdef..."
+  }
+}
+```
+
+### Fee Types
+
+<Accordion title="Developer Fee">
+Your configured fee percentage, set per customer or globally
+</Accordion>
+
+<Accordion title="Exchange Fee">
+Currency conversion costs for fiat-to-crypto or cross-currency transfers
+</Accordion>
+
+<Accordion title="Gas Fee">
+Blockchain transaction costs (automatically calculated)
+</Accordion>
+
+<Accordion title="Network Fee">
+Payment rail processing fees (ACH, Wire, SEPA)
+</Accordion>
+
+## Payment Rail Options
+
+### Traditional Banking Rails
+
+<CardGroup cols={2}>
+  <Card title="ACH" icon="building-columns">
+    US Automated Clearing House (1-3 business days)
+  </Card>
+  <Card title="ACH Push" icon="arrow-up">
+    Real-time ACH transfers (instant)
+  </Card>
+  <Card title="ACH Same Day" icon="clock">
+    Same-day ACH settlement
+  </Card>
+  <Card title="Wire" icon="bolt">
+    US domestic and international wire transfers
+  </Card>
+  <Card title="SEPA" icon="euro-sign">
+    Single Euro Payments Area (EU)
+  </Card>
+  <Card title="SWIFT" icon="globe">
+    International wire transfers worldwide
+  </Card>
+  <Card title="SPEI" icon="peso-sign">
+    Mexican instant transfer system
+  </Card>
+</CardGroup>
+
+### Blockchain Networks
+
+<CardGroup cols={3}>
+  <Card title="Solana" icon="link">
+    Fast, low-cost transactions
+  </Card>
+  <Card title="Ethereum" icon="ethereum">
+    Established DeFi ecosystem
+  </Card>
+  <Card title="Polygon" icon="triangle">
+    Ethereum Layer 2 scaling
+  </Card>
+  <Card title="Arbitrum" icon="chart-network">
+    Optimistic rollup network
+  </Card>
+  <Card title="Optimism" icon="circle-plus">
+    Ethereum Layer 2 solution
+  </Card>
+  <Card title="Avalanche" icon="mountain">
+    High-performance blockchain
+  </Card>
+</CardGroup>
+
+## Special Transfer Features
+
+### Reference Messages
+
+Add reference information for wire transfers:
+
+```json
+{
+  "destination": {
+    "payment_rail": "wire",
+    "currency": "usd",
+    "external_account_id": "ext_123",
+    "wire_message": "Invoice payment #12345"
+  }
+}
+```
+
+### SEPA References  
+
+Include references for SEPA transfers:
+
+```json
+{
+  "source": {
+    "payment_rail": "sepa",
+    "currency": "eur",
+    "sepa_reference": "Customer payment 789"
+  }
+}
+```
+
+### Blockchain Memos
+
+Add memos to blockchain transfers:
+
+```json
+{
+  "destination": {
+    "payment_rail": "solana",
+    "currency": "usdc",
+    "to_address": "SolanaAddress111111111111111111111111111",
+    "blockchain_memo": "Salary payment January 2024"
+  }
+}
+```
+
+### SWIFT Charge Handling
+
+Specify who pays international transfer charges:
+
+```json
+{
+  "destination": {
+    "payment_rail": "swift", 
+    "currency": "eur",
+    "external_account_id": "ext_international_123",
+    "swift_charges": "our"
+  }
+}
+```
+
+**Charge Options:**
+- **`our`** - All charges paid by sender
+- **`sha`** - Charges shared between sender and recipient
+
+## Transfer Monitoring
+
+### Retrieve Transfer Status
+
+```bash
+curl -X GET http://localhost:3000/transfers/txfr_1234567890abcdef \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+### List All Transfers
+
+```bash
+curl -X GET http://localhost:3000/transfers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+### Filter by Customer
+
+```bash
+curl -X GET "http://localhost:3000/transfers?customer_id=cust_1234567890abcdef" \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+## Integration Patterns
+
+### Customer Balance Sweep
+
+Transfer all available balance from a wallet to bank account:
+
+```javascript
+async function sweepCustomerBalance(customerId, walletId, externalAccountId) {
+  // Create flexible amount transfer
+  const transfer = await createTransfer({
+    on_behalf_of: customerId,
+    source: {
+      payment_rail: 'solana',
+      currency: 'usdc',
+      from_address: await getWalletAddress(walletId),
+      wallet_id: walletId
+    },
+    destination: {
+      payment_rail: 'ach',
+      currency: 'usd', 
+      external_account_id: externalAccountId
+    },
+    features: {
+      flexible_amount: true
+    }
+  });
+  
+  return transfer;
+}
+```
+
+### Automated Onramp
+
+Create recurring onramp transfers:
+
+```javascript
+async function createRecurringOnramp(customerId, amount, frequency = 'weekly') {
+  const walletAddress = await getCustomerWalletAddress(customerId, 'solana');
+  
+  const transfer = await createTransfer({
+    amount,
+    on_behalf_of: customerId,
+    source: {
+      payment_rail: 'ach_push',
+      currency: 'usd'
+    },
+    destination: {
+      payment_rail: 'solana',
+      currency: 'usdc',
+      to_address: walletAddress
+    },
+    schedule: {
+      frequency,
+      start_date: new Date().toISOString()
+    }
+  });
+  
+  return transfer;
+}
+```
+
+### Cross-Chain Portfolio Rebalancing
+
+Move assets between chains based on portfolio targets:
+
+```javascript
+async function rebalancePortfolio(customerId, targetAllocations) {
+  const wallets = await getCustomerWallets(customerId);
+  const balances = await getAggregatedBalances(wallets);
+  
+  const transfers = [];
+  
+  // Calculate required transfers to meet target allocations
+  for (const [chain, targetPercent] of Object.entries(targetAllocations)) {
+    const currentAmount = balances[chain] || 0;
+    const totalValue = Object.values(balances).reduce((sum, bal) => sum + bal, 0);
+    const targetAmount = totalValue * (targetPercent / 100);
+    const difference = targetAmount - currentAmount;
+    
+    if (Math.abs(difference) > 10) { // Only rebalance if difference > $10
+      if (difference > 0) {
+        // Need to move funds TO this chain
+        const sourceChain = findBestSourceChain(balances, difference, chain);
+        transfers.push(await createCrossChainTransfer(
+          customerId, sourceChain, chain, difference
+        ));
+      }
+    }
+  }
+  
+  return transfers;
+}
+```
+
+## Error Handling
+
+### Common Transfer Errors
+
+<Accordion title="Invalid Payment Rail Combination">
+```json
+{
+  "statusCode": 400,
+  "message": "Cannot transfer directly from SEPA to Solana",
+  "error": "Bad Request"
+}
+```
+</Accordion>
+
+<Accordion title="Insufficient Customer Endorsements">
+```json
+{
+  "statusCode": 403,
+  "message": "Customer lacks required endorsement for wire transfers",
+  "error": "Forbidden" 
+}
+```
+</Accordion>
+
+<Accordion title="Invalid External Account">
+```json
+{
+  "statusCode": 404,
+  "message": "External account ext_123 not found",
+  "error": "Not Found"
+}
+```
+</Accordion>
+
+<Accordion title="Amount Below Minimum">
+```json
+{
+  "statusCode": 400,
+  "message": "Amount below minimum transfer threshold of $10.00",
+  "error": "Bad Request"
+}
+```
+</Accordion>
+
+## Best Practices
+
+### Transfer Creation
+- Always use idempotency keys for create operations
+- Validate customer endorsements before creating transfers
+- Check minimum and maximum transfer limits
+- Provide clear error messages to users
+
+### Amount Handling
+- Use string values for amounts to avoid precision issues
+- Consider currency decimal places (USD: 2, ETH: 18)
+- Implement appropriate rounding for display
+- Handle fee calculations transparently
+
+### Status Monitoring
+- Poll transfer status regularly until completion
+- Implement webhooks for real-time status updates
+- Handle all possible transfer states gracefully
+- Provide users with clear status messaging
+
+### Error Recovery
+- Implement retry logic for transient failures
+- Handle network-specific error codes appropriately
+- Provide clear user messaging for different error types
+- Maintain detailed logs for debugging failed transfers
+
+## Performance Considerations
+
+### Batch Operations
+- Group multiple transfers when possible
+- Use appropriate API rate limiting
+- Implement exponential backoff for retries
+- Cache customer and wallet information
+
+### Real-Time Updates
+- Use websockets or webhooks for status updates
+- Avoid excessive polling of transfer status
+- Implement proper caching strategies
+- Consider using background job processing
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Virtual Accounts" href="/concepts/virtual-accounts">
+    Learn how virtual accounts create transfers automatically
+  </Card>
+  <Card title="External Accounts" href="/concepts/external-accounts">
+    Manage destination bank accounts for offramp transfers
+  </Card>
+  <Card title="Onramp Guide" href="/guides/onramp-flow">
+    Build complete fiat-to-crypto workflows
+  </Card>
+  <Card title="Offramp Guide" href="/guides/offramp-flow">
+    Create crypto-to-fiat withdrawal flows
+  </Card>
+</CardGroup>

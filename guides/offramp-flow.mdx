@@ -1,0 +1,857 @@
+---
+title: 'Building an Offramp Flow'
+description: 'Complete guide to building crypto-to-fiat withdrawal experiences'
+---
+
+## Overview
+
+An offramp flow enables users to convert cryptocurrency back to traditional fiat currency and withdraw to their bank accounts. This guide covers building complete offramp experiences using Omniwire's transfer system and liquidation addresses.
+
+## Offramp Architecture
+
+<Steps>
+  <Step title="Bank Account Setup">
+    Customer adds and verifies external bank accounts
+  </Step>
+  <Step title="Crypto Source">
+    Identify crypto assets available for conversion
+  </Step>
+  <Step title="Conversion & Transfer">
+    Convert crypto to fiat and send to bank account
+  </Step>
+  <Step title="Settlement">
+    Funds delivered to customer's bank account
+  </Step>
+</Steps>
+
+## Implementation Approaches
+
+### Approach 1: Direct Transfer Offramp
+
+Customer-initiated transfers from crypto to bank accounts:
+
+<CardGroup cols={2}>
+  <Card title="✅ Pros" icon="check">
+    - Full control over each withdrawal
+    - Flexible amount handling
+    - Real-time transfer tracking
+    - Custom fee structures per transaction
+  </Card>
+  <Card title="❌ Cons" icon="x">
+    - Requires customer-initiated action for each withdrawal
+    - More complex UX for recurring withdrawals
+    - Manual balance checking required
+  </Card>
+</CardGroup>
+
+### Approach 2: Liquidation Address Offramp
+
+Automated addresses that instantly convert incoming crypto to fiat:
+
+<CardGroup cols={2}>
+  <Card title="✅ Pros" icon="check">
+    - Instant conversion upon crypto receipt
+    - Great for automated systems
+    - Simplified user experience
+    - Automated balance sweeping
+  </Card>
+  <Card title="❌ Cons" icon="x">
+    - Fixed conversion setup per address
+    - Less granular control over individual conversions
+    - Limited to supported crypto assets
+  </Card>
+</CardGroup>
+
+## Building a Transfer-Based Offramp
+
+### Step 1: External Account Management
+
+First, customers need to add and verify their bank accounts:
+
+<CodeGroup>
+
+```javascript Node.js
+async function addBankAccount(customerId, bankAccountData) {
+  const externalAccount = await fetch(`http://localhost:3000/customers/${customerId}/external_accounts`, {
+    method: 'POST',
+    headers: {
+      'Api-Key': 'test-api-key',
+      'Tenant-Id': 'your-tenant-uuid',
+      'Idempotency-Key': crypto.randomUUID(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      currency: 'usd',
+      account_type: 'us',
+      bank_name: bankAccountData.bankName,
+      account_name: bankAccountData.accountName,
+      first_name: bankAccountData.firstName,
+      last_name: bankAccountData.lastName,
+      account_owner_type: 'individual',
+      account_owner_name: `${bankAccountData.firstName} ${bankAccountData.lastName}`,
+      account: {
+        routing_number: bankAccountData.routingNumber,
+        account_number: bankAccountData.accountNumber,
+        checking_or_savings: 'checking'
+      },
+      address: bankAccountData.address
+    })
+  });
+  
+  return externalAccount.json();
+}
+
+// List customer's bank accounts
+async function getBankAccounts(customerId) {
+  const response = await fetch(`http://localhost:3000/customers/${customerId}/external_accounts`, {
+    headers: {
+      'Api-Key': 'test-api-key',
+      'Tenant-Id': 'your-tenant-uuid'
+    }
+  });
+  
+  const { data: accounts } = await response.json();
+  return accounts;
+}
+```
+
+```python Python
+import requests
+import uuid
+
+def add_bank_account(customer_id, bank_account_data):
+    response = requests.post(
+        f'http://localhost:3000/customers/{customer_id}/external_accounts',
+        headers={
+            'Api-Key': 'test-api-key',
+            'Tenant-Id': 'your-tenant-uuid',
+            'Idempotency-Key': str(uuid.uuid4()),
+            'Content-Type': 'application/json'
+        },
+        json={
+            'currency': 'usd',
+            'account_type': 'us',
+            'bank_name': bank_account_data['bankName'],
+            'account_name': bank_account_data['accountName'],
+            'first_name': bank_account_data['firstName'],
+            'last_name': bank_account_data['lastName'],
+            'account_owner_type': 'individual',
+            'account_owner_name': f"{bank_account_data['firstName']} {bank_account_data['lastName']}",
+            'account': {
+                'routing_number': bank_account_data['routingNumber'],
+                'account_number': bank_account_data['accountNumber'],
+                'checking_or_savings': 'checking'
+            },
+            'address': bank_account_data['address']
+        }
+    )
+    
+    return response.json()
+```
+
+</CodeGroup>
+
+### Step 2: Check Available Crypto Balances
+
+Get customer's crypto holdings available for offramp:
+
+```javascript
+async function getAvailableCryptoBalance(customerId) {
+  const wallets = await fetch(`http://localhost:3000/customers/${customerId}/wallets`, {
+    headers: {
+      'Api-Key': 'test-api-key',
+      'Tenant-Id': 'your-tenant-uuid'
+    }
+  });
+  
+  const { data: walletList } = await wallets.json();
+  
+  const availableBalances = [];
+  
+  for (const wallet of walletList) {
+    wallet.balances.forEach(balance => {
+      if (parseFloat(balance.balance) > 0) {
+        availableBalances.push({
+          chain: wallet.chain,
+          walletId: wallet.id,
+          address: wallet.address,
+          currency: balance.currency,
+          balance: balance.balance,
+          contractAddress: balance.contract_address
+        });
+      }
+    });
+  }
+  
+  return availableBalances;
+}
+```
+
+### Step 3: Create Offramp Transfer
+
+Convert crypto to fiat and send to bank account:
+
+```javascript
+async function createOfframpTransfer(customerId, sourceWallet, amount, externalAccountId) {
+  const transfer = await fetch('http://localhost:3000/transfers', {
+    method: 'POST',
+    headers: {
+      'Api-Key': 'test-api-key',
+      'Tenant-Id': 'your-tenant-uuid',
+      'Idempotency-Key': crypto.randomUUID(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      amount,
+      on_behalf_of: customerId,
+      source: {
+        payment_rail: sourceWallet.chain,
+        currency: sourceWallet.currency.toLowerCase(),
+        from_address: sourceWallet.address,
+        wallet_id: sourceWallet.walletId
+      },
+      destination: {
+        payment_rail: 'ach',
+        currency: 'usd',
+        external_account_id: externalAccountId
+      }
+    })
+  });
+  
+  return transfer.json();
+}
+```
+
+### Step 4: Complete Offramp Flow
+
+Put it all together:
+
+```javascript
+async function completeOfframpFlow(customerId, cryptoAmount, cryptoCurrency, bankAccountData) {
+  try {
+    // 1. Add bank account if not exists
+    console.log('Adding bank account...');
+    const bankAccount = await addBankAccount(customerId, bankAccountData);
+    console.log('Bank account added:', bankAccount.id);
+    
+    // 2. Check available crypto balances
+    console.log('Checking crypto balances...');
+    const balances = await getAvailableCryptoBalance(customerId);
+    
+    const sourceBalance = balances.find(b => 
+      b.currency.toLowerCase() === cryptoCurrency.toLowerCase() && 
+      parseFloat(b.balance) >= parseFloat(cryptoAmount)
+    );
+    
+    if (!sourceBalance) {
+      throw new Error(`Insufficient ${cryptoCurrency} balance`);
+    }
+    
+    // 3. Create offramp transfer
+    console.log('Creating offramp transfer...');
+    const transfer = await createOfframpTransfer(
+      customerId,
+      sourceBalance,
+      cryptoAmount,
+      bankAccount.id
+    );
+    
+    return {
+      transferId: transfer.id,
+      bankAccountId: bankAccount.id,
+      sourceWallet: sourceBalance,
+      estimatedDelivery: transfer.estimated_completion,
+      conversionRate: transfer.exchange_rate,
+      fees: transfer.fees
+    };
+    
+  } catch (error) {
+    console.error('Offramp flow failed:', error);
+    throw error;
+  }
+}
+
+// Usage
+const result = await completeOfframpFlow(
+  'cust_1234567890abcdef',
+  '100.0', // Amount of USDC to convert
+  'USDC',
+  {
+    bankName: 'Chase Bank',
+    accountName: 'John Doe Checking',
+    firstName: 'John',
+    lastName: 'Doe',
+    routingNumber: '021000021',
+    accountNumber: '1234567890',
+    address: {
+      street_line_1: '123 Main Street',
+      city: 'Austin',
+      state: 'TX',
+      postal_code: '73301',
+      country: 'USA'
+    }
+  }
+);
+
+console.log('Offramp setup complete:', result);
+```
+
+## Building a Liquidation Address Offramp
+
+### Automated Crypto-to-Bank Conversion
+
+Liquidation addresses automatically convert incoming crypto to fiat:
+
+```javascript
+async function createLiquidationAddress(customerId, chain, cryptoCurrency, externalAccountId) {
+  const liquidationAddress = await fetch(`http://localhost:3000/customers/${customerId}/liquidation_addresses`, {
+    method: 'POST',
+    headers: {
+      'Api-Key': 'test-api-key',
+      'Tenant-Id': 'your-tenant-uuid',
+      'Idempotency-Key': crypto.randomUUID(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      chain,
+      currency: cryptoCurrency.toLowerCase(),
+      destination_payment_rail: 'wire',
+      destination_currency: 'usd',
+      external_account_id: externalAccountId,
+      custom_developer_fee_percent: '0.25'
+    })
+  });
+  
+  return liquidationAddress.json();
+}
+
+// Example: Create liquidation address for Ethereum USDC → Wire transfer
+async function setupAutomatedOfframp(customerId, bankAccountData) {
+  // 1. Add bank account
+  const bankAccount = await addBankAccount(customerId, bankAccountData);
+  
+  // 2. Create liquidation address
+  const liquidationAddress = await createLiquidationAddress(
+    customerId,
+    'ethereum',
+    'usdc',
+    bankAccount.id
+  );
+  
+  return {
+    liquidationAddress: liquidationAddress.address,
+    chain: liquidationAddress.chain,
+    currency: liquidationAddress.currency,
+    bankAccountId: bankAccount.id,
+    instructions: `Send ${liquidationAddress.currency.toUpperCase()} to ${liquidationAddress.address} to automatically convert to USD and transfer to your bank account.`
+  };
+}
+```
+
+### Cross-Chain Liquidation Setup
+
+Create liquidation addresses for multiple chains:
+
+```javascript
+async function setupMultiChainOfframp(customerId, externalAccountId) {
+  const chains = [
+    { chain: 'ethereum', currency: 'usdc' },
+    { chain: 'solana', currency: 'usdc' },
+    { chain: 'polygon', currency: 'usdc' }
+  ];
+  
+  const liquidationAddresses = await Promise.all(
+    chains.map(async ({ chain, currency }) => {
+      const address = await createLiquidationAddress(
+        customerId,
+        chain,
+        currency,
+        externalAccountId
+      );
+      
+      return {
+        chain,
+        currency: currency.toUpperCase(),
+        address: address.address,
+        memo: address.blockchain_memo
+      };
+    })
+  );
+  
+  return liquidationAddresses;
+}
+```
+
+## Advanced Offramp Features
+
+### Balance Sweeping
+
+Automatically withdraw all available crypto balances:
+
+```javascript
+async function sweepAllBalances(customerId, externalAccountId) {
+  const balances = await getAvailableCryptoBalance(customerId);
+  const transfers = [];
+  
+  for (const balance of balances) {
+    if (parseFloat(balance.balance) > 0.01) { // Minimum threshold
+      const transfer = await createOfframpTransfer(
+        customerId,
+        balance,
+        balance.balance, // Use full balance
+        externalAccountId
+      );
+      
+      transfers.push({
+        transferId: transfer.id,
+        chain: balance.chain,
+        currency: balance.currency,
+        amount: balance.balance
+      });
+    }
+  }
+  
+  return transfers;
+}
+```
+
+### Scheduled Withdrawals
+
+Set up recurring crypto-to-fiat conversions:
+
+```javascript
+async function createScheduledWithdrawal(customerId, schedule) {
+  const { amount, currency, chain, externalAccountId, frequency } = schedule;
+  
+  // Create recurring liquidation setup
+  const liquidationAddress = await createLiquidationAddress(
+    customerId,
+    chain,
+    currency,
+    externalAccountId
+  );
+  
+  // Set up automated balance monitoring
+  const monitoringJob = await scheduleBalanceMonitoring({
+    customerId,
+    liquidationAddress: liquidationAddress.address,
+    frequency,
+    minimumAmount: amount
+  });
+  
+  return {
+    liquidationAddress,
+    monitoringJobId: monitoringJob.id
+  };
+}
+```
+
+### Conditional Offramps
+
+Set up price-based or threshold-based automatic withdrawals:
+
+```javascript
+async function createConditionalOfframp(customerId, conditions) {
+  const { 
+    minimumBalance, 
+    targetPriceUSD, 
+    externalAccountId, 
+    chain, 
+    currency 
+  } = conditions;
+  
+  // Create liquidation address
+  const liquidationAddress = await createLiquidationAddress(
+    customerId,
+    chain,
+    currency,
+    externalAccountId
+  );
+  
+  // Set up conditional monitoring
+  const conditionalJob = await createConditionalMonitor({
+    customerId,
+    liquidationAddress: liquidationAddress.address,
+    conditions: {
+      minimumBalance,
+      targetPriceUSD,
+      checkFrequency: 'hourly'
+    }
+  });
+  
+  return {
+    liquidationAddress,
+    conditionalJobId: conditionalJob.id,
+    conditions
+  };
+}
+```
+
+## User Experience Patterns
+
+### Offramp Dashboard
+
+```javascript
+class OfframpDashboard {
+  async initialize(customerId) {
+    this.customerId = customerId;
+    this.bankAccounts = await getBankAccounts(customerId);
+    this.cryptoBalances = await getAvailableCryptoBalance(customerId);
+    this.liquidationAddresses = await this.getLiquidationAddresses();
+    
+    this.render();
+  }
+  
+  render() {
+    this.renderCryptoBalances();
+    this.renderBankAccounts();
+    this.renderWithdrawalHistory();
+    this.renderQuickActions();
+  }
+  
+  renderCryptoBalances() {
+    const balanceCards = this.cryptoBalances.map(balance => ({
+      chain: balance.chain,
+      currency: balance.currency,
+      balance: balance.balance,
+      usdValue: this.calculateUSDValue(balance),
+      withdrawAction: () => this.initiateWithdrawal(balance)
+    }));
+    
+    this.displayBalanceCards(balanceCards);
+  }
+  
+  async initiateWithdrawal(cryptoBalance) {
+    const withdrawalDialog = new WithdrawalDialog({
+      cryptoBalance,
+      bankAccounts: this.bankAccounts,
+      onConfirm: async (amount, bankAccountId) => {
+        const transfer = await createOfframpTransfer(
+          this.customerId,
+          cryptoBalance,
+          amount,
+          bankAccountId
+        );
+        
+        this.showWithdrawalConfirmation(transfer);
+        this.startTransferTracking(transfer.id);
+      }
+    });
+    
+    withdrawalDialog.show();
+  }
+  
+  async startTransferTracking(transferId) {
+    const trackTransfer = async () => {
+      const transfer = await getTransfer(transferId);
+      
+      this.updateTransferStatus(transfer);
+      
+      if (!['payment_processed', 'error', 'canceled'].includes(transfer.state)) {
+        setTimeout(trackTransfer, 30000);
+      }
+    };
+    
+    trackTransfer();
+  }
+}
+```
+
+### Mobile Withdrawal Flow
+
+```javascript
+class MobileOfframp {
+  async quickWithdraw(customerId, cryptoBalance, amount) {
+    // Streamlined mobile withdrawal
+    const flow = {
+      // Step 1: Select or add bank account
+      bankAccount: await this.selectBankAccount(customerId),
+      
+      // Step 2: Confirm withdrawal details
+      confirmation: await this.confirmWithdrawal({
+        cryptoBalance,
+        amount,
+        estimatedUSD: this.calculateUSDAmount(cryptoBalance, amount)
+      }),
+      
+      // Step 3: Execute withdrawal
+      transfer: await createOfframpTransfer(
+        customerId,
+        cryptoBalance,
+        amount,
+        flow.bankAccount.id
+      )
+    };
+    
+    return flow;
+  }
+  
+  async selectBankAccount(customerId) {
+    const accounts = await getBankAccounts(customerId);
+    
+    if (accounts.length === 0) {
+      // Quick account addition flow
+      return this.quickAddBankAccount(customerId);
+    } else {
+      // Account selection
+      return this.showAccountSelector(accounts);
+    }
+  }
+}
+```
+
+## Monitoring & Tracking
+
+### Transfer Status Tracking
+
+```javascript
+class OfframpTracker {
+  async trackOfframpTransfer(transferId) {
+    const transfer = await getTransfer(transferId);
+    
+    const statusMessages = {
+      awaiting_funds: 'Preparing crypto for conversion...',
+      funds_received: 'Converting crypto to USD...',
+      payment_submitted: 'Sending funds to your bank account...',
+      payment_processed: 'Withdrawal complete! Funds should arrive in 1-3 business days.',
+      error: 'There was an issue processing your withdrawal.',
+      undeliverable: 'Unable to deliver funds to your bank account.',
+      returned: 'Bank deposit was returned.'
+    };
+    
+    return {
+      transferId: transfer.id,
+      status: transfer.state,
+      message: statusMessages[transfer.state],
+      progress: this.calculateProgress(transfer.state),
+      receipt: transfer.receipt,
+      estimatedArrival: transfer.estimated_completion
+    };
+  }
+  
+  calculateProgress(state) {
+    const progressMap = {
+      awaiting_funds: 25,
+      funds_received: 50,
+      payment_submitted: 75,
+      payment_processed: 100
+    };
+    
+    return progressMap[state] || 0;
+  }
+}
+```
+
+### Liquidation Address Monitoring
+
+```javascript
+async function monitorLiquidationActivity(customerId) {
+  const liquidationAddresses = await getLiquidationAddresses(customerId);
+  
+  for (const address of liquidationAddresses) {
+    const drainHistory = await fetch(
+      `http://localhost:3000/customers/${customerId}/liquidation_addresses/${address.id}/drains`,
+      {
+        headers: {
+          'Api-Key': 'test-api-key',
+          'Tenant-Id': 'your-tenant-uuid'
+        }
+      }
+    );
+    
+    const { data: drains } = await drainHistory.json();
+    
+    // Process recent drains
+    const recentDrains = drains.filter(drain => 
+      new Date(drain.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+    );
+    
+    recentDrains.forEach(drain => {
+      console.log(`Liquidation processed: ${drain.amount} ${drain.currency} → ${drain.destination.currency}`);
+      
+      // Notify customer
+      notifyCustomerOfLiquidation(customerId, {
+        amount: drain.amount,
+        currency: drain.currency,
+        txHash: drain.deposit_tx_hash,
+        destinationTxHash: drain.destination_tx_hash
+      });
+    });
+  }
+}
+```
+
+## Error Handling & Recovery
+
+### Comprehensive Error Management
+
+```javascript
+class OfframpErrorHandler {
+  async handleOfframpError(error, context) {
+    switch (error.type) {
+      case 'insufficient_balance':
+        return this.handleInsufficientBalance(error, context);
+      
+      case 'invalid_external_account':
+        return this.handleInvalidBankAccount(error, context);
+      
+      case 'transfer_failed':
+        return this.handleTransferFailure(error, context);
+      
+      case 'bank_account_verification_failed':
+        return this.handleBankVerificationFailure(error, context);
+      
+      default:
+        return this.handleGenericError(error, context);
+    }
+  }
+  
+  async handleInsufficientBalance(error, context) {
+    const { customerId, requestedAmount, currency } = context;
+    const balances = await getAvailableCryptoBalance(customerId);
+    
+    const availableBalance = balances.find(b => 
+      b.currency.toLowerCase() === currency.toLowerCase()
+    );
+    
+    return {
+      canRecover: !!availableBalance,
+      maxAmount: availableBalance?.balance || '0',
+      suggestedAction: availableBalance 
+        ? `Maximum available: ${availableBalance.balance} ${currency}`
+        : `You don't have any ${currency} available for withdrawal`,
+      recoveryOptions: availableBalance 
+        ? [{ action: 'adjust_amount', maxAmount: availableBalance.balance }]
+        : [{ action: 'deposit_crypto', currency }]
+    };
+  }
+  
+  async handleBankVerificationFailure(error, context) {
+    const { bankAccountId } = context;
+    
+    return {
+      canRecover: true,
+      action: 'retry_bank_verification',
+      message: 'Bank account verification failed. Please verify account details.',
+      recoveryOptions: [
+        { action: 'update_account_details', bankAccountId },
+        { action: 'add_different_account' },
+        { action: 'contact_bank' }
+      ]
+    };
+  }
+  
+  async handleTransferFailure(error, context) {
+    const transfer = await getTransfer(context.transferId);
+    
+    switch (transfer.state) {
+      case 'undeliverable':
+        return {
+          canRecover: true,
+          action: 'update_bank_account',
+          message: 'Unable to deliver funds to your bank account. Please verify account details.'
+        };
+      
+      case 'returned':
+        return {
+          canRecover: true,
+          action: 'retry_withdrawal',
+          message: 'Bank returned the deposit. Your crypto has been returned to your wallet.'
+        };
+      
+      default:
+        return {
+          canRecover: false,
+          action: 'contact_support',
+          message: 'Please contact our support team for assistance.'
+        };
+    }
+  }
+}
+```
+
+## Testing Your Offramp Flow
+
+### End-to-End Testing
+
+```javascript
+describe('Offramp Flow', () => {
+  test('complete transfer-based offramp', async () => {
+    const customerId = 'cust_test_123456';
+    const bankAccountData = generateTestBankAccountData();
+    
+    const result = await completeOfframpFlow(
+      customerId,
+      '50.0',
+      'USDC',
+      bankAccountData
+    );
+    
+    expect(result.transferId).toBeDefined();
+    expect(result.bankAccountId).toBeDefined();
+    expect(result.sourceWallet).toBeDefined();
+  });
+  
+  test('liquidation address creation', async () => {
+    const customerId = 'cust_test_123456';
+    const bankAccountData = generateTestBankAccountData();
+    
+    const result = await setupAutomatedOfframp(customerId, bankAccountData);
+    
+    expect(result.liquidationAddress).toBeDefined();
+    expect(result.chain).toBe('ethereum');
+    expect(result.currency).toBe('usdc');
+  });
+  
+  test('insufficient balance handling', async () => {
+    const customerId = 'cust_test_empty_wallet';
+    const bankAccountData = generateTestBankAccountData();
+    
+    await expect(completeOfframpFlow(customerId, '1000.0', 'USDC', bankAccountData))
+      .rejects.toThrow('Insufficient USDC balance');
+  });
+});
+```
+
+## Production Considerations
+
+### Security
+- Implement multi-factor authentication for large withdrawals
+- Set daily/weekly withdrawal limits based on customer verification level
+- Monitor for unusual withdrawal patterns
+- Encrypt all bank account information
+
+### Compliance  
+- Maintain detailed records of all crypto-to-fiat conversions
+- Report large transactions as required by regulations
+- Implement proper AML screening for all withdrawals
+- Document source of crypto funds for compliance
+
+### Performance
+- Implement proper caching for frequently accessed balance data
+- Use background processing for liquidation address monitoring
+- Optimize database queries for transaction history
+- Implement proper rate limiting for API endpoints
+
+### User Experience
+- Provide clear timelines for different withdrawal methods
+- Show real-time conversion rates and fees
+- Send notifications for each step of the withdrawal process
+- Maintain transaction history with detailed receipts
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Onramp Flow" href="/guides/onramp-flow">
+    Learn how to build fiat-to-crypto conversion flows
+  </Card>
+  <Card title="External Accounts" href="/concepts/external-accounts">
+    Understand bank account management
+  </Card>
+  <Card title="Transfers" href="/concepts/transfers">
+    Deep dive into transfer mechanics
+  </Card>
+  <Card title="API Reference" href="/api-reference/authentication">
+    Complete API documentation
+  </Card>
+</CardGroup>

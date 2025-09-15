@@ -1,0 +1,428 @@
+---
+title: 'Customers'
+description: 'Understanding customer management and KYC in Omniwire'
+---
+
+## Overview
+
+Customers are the foundation of Omniwire. Every action in the platform - from creating wallets to executing transfers - is performed on behalf of a customer. This page covers customer lifecycle, KYC requirements, and compliance management.
+
+## Customer Lifecycle
+
+<Steps>
+  <Step title="Creation">
+    Customer is created with basic information and requested endorsements
+  </Step>
+  <Step title="Verification">
+    KYC process begins with identity verification and document collection
+  </Step>
+  <Step title="Approval">
+    Customer receives endorsements and can use platform features
+  </Step>
+  <Step title="Management">
+    Ongoing compliance monitoring and requirement fulfillment
+  </Step>
+</Steps>
+
+## Customer Information
+
+### Required Data
+
+<Accordion title="Personal Information">
+- **Full Name**: First and last name (2-1024 characters each)
+- **Email Address**: Valid email for communication
+- **Date of Birth**: Must be 18+ years old (yyyy-mm-dd format)
+- **Residential Address**: Complete address with subdivision codes
+</Accordion>
+
+<Accordion title="Identifying Information">
+- **SSN**: Social Security Number for US customers
+- **Government ID**: Driver's license or passport details  
+- **Tax Information**: Additional tax identifiers as needed
+</Accordion>
+
+<Accordion title="Legal Agreements">
+- **Terms of Service**: Signed agreement ID from ToS acceptance flow
+- **Privacy Policy**: Consent for data processing
+- **Regulatory Disclosures**: Required financial service disclosures
+</Accordion>
+
+### Address Format
+
+Omniwire requires properly formatted addresses with ISO codes:
+
+```json
+{
+  "residential_address": {
+    "street_line_1": "123 Main Street",
+    "street_line_2": "Apt 4B",
+    "city": "Austin",
+    "subdivision": "US-TX",
+    "postal_code": "73301", 
+    "country": "USA"
+  }
+}
+```
+
+**Key Requirements:**
+- Use ISO 3166-2 subdivision codes with country prefix (e.g., "US-TX")
+- Street address must be at least 4 characters
+- All fields are required except `street_line_2`
+
+## Customer Status
+
+Customer status indicates their current verification state and platform access:
+
+### Active Status Values
+
+<CardGroup cols={2}>
+  <Card title="active" icon="check-circle">
+    Fully verified, can use all approved features
+  </Card>
+  <Card title="under_review" icon="clock">
+    Initial verification in progress
+  </Card>
+  <Card title="awaiting_questionnaire" icon="clipboard">
+    Additional information requested
+  </Card>
+  <Card title="awaiting_ubo" icon="users">
+    Ultimate beneficial owner info needed
+  </Card>
+</CardGroup>
+
+### Restricted Status Values
+
+<CardGroup cols={2}>
+  <Card title="incomplete" icon="exclamation-triangle">
+    Missing required information
+  </Card>
+  <Card title="not_started" icon="pause">
+    Verification process hasn't begun
+  </Card>
+  <Card title="paused" icon="hand">
+    Verification temporarily halted
+  </Card>
+  <Card title="rejected" icon="x-circle">
+    KYC verification failed
+  </Card>
+</CardGroup>
+
+## Endorsements
+
+Endorsements grant customers access to specific payment rails and features. Each endorsement has its own verification requirements and approval process.
+
+### Available Endorsements
+
+<Accordion title="Base Infrastructure">
+**`base`** - Core platform access (required for all customers)
+- Basic wallet and transfer capabilities
+- Customer profile management
+- Standard compliance screening
+</Accordion>
+
+<Accordion title="US Banking">
+**`ach`** - Automated Clearing House transfers
+- Standard ACH transfers (1-3 business days)
+- Account linking and verification
+- Transaction limits: $25,000 per day
+
+**`ach_same_day`** - Same-day ACH processing
+- Faster settlement (same business day)
+- Higher processing fees
+- Transaction limits: $100,000 per day
+
+**`ach_push`** - ACH push payment capabilities
+- Instant ACH transfers
+- Real-time settlement
+- Premium processing fees
+
+**`wire`** - Domestic and international wire transfers
+- Same-day settlement for domestic
+- 1-5 days for international
+- Higher transaction limits: $1,000,000+
+</Accordion>
+
+<Accordion title="International Banking">
+**`sepa`** - Single Euro Payments Area
+- EUR transfers within SEPA zone
+- Same-day or instant settlement
+- Low fees for EUR transactions
+
+**`swift`** - International wire transfers
+- Global reach to 200+ countries
+- 1-5 business day settlement
+- Correspondent banking network
+
+**`spei`** - Mexican instant transfers
+- Real-time MXN transfers in Mexico
+- 24/7/365 availability
+- Direct connection to Banxico
+</Accordion>
+
+### Endorsement Status
+
+Each endorsement progresses through approval states:
+
+```json
+{
+  "endorsements": [
+    {
+      "name": "base",
+      "status": "approved",
+      "additional_requirements": []
+    },
+    {
+      "name": "ach",
+      "status": "pending", 
+      "additional_requirements": ["bank_account_verification"]
+    },
+    {
+      "name": "wire",
+      "status": "under_review",
+      "additional_requirements": ["enhanced_due_diligence"]
+    }
+  ]
+}
+```
+
+**Status Values:**
+- **`approved`** - Ready to use
+- **`pending`** - Awaiting review
+- **`under_review`** - Currently being processed  
+- **`incomplete`** - Missing requirements
+- **`rejected`** - Not approved
+- **`revoked`** - Previously approved but removed
+
+## Requirements Management
+
+The requirements system tracks what information or actions are needed from customers:
+
+### Current Requirements
+
+Things that must be completed before full activation:
+
+```json
+{
+  "requirements_due": [
+    "identity_verification",
+    "proof_of_address", 
+    "bank_account_verification"
+  ]
+}
+```
+
+### Future Requirements  
+
+Things that will be needed later based on usage patterns:
+
+```json
+{
+  "future_requirements_due": [
+    "enhanced_due_diligence",
+    "source_of_funds_documentation"
+  ]
+}
+```
+
+### Common Requirement Types
+
+<Accordion title="Identity Verification">
+- Government-issued photo ID
+- Facial recognition verification  
+- Address confirmation
+- SSN verification for US customers
+</Accordion>
+
+<Accordion title="Financial Information">
+- Bank account verification
+- Source of funds documentation
+- Employment verification
+- Financial statements (for high-value customers)
+</Accordion>
+
+<Accordion title="Enhanced Due Diligence">
+- Politically Exposed Person (PEP) screening
+- Sanctions list checking
+- Ultimate beneficial owner identification
+- Business registration documents
+</Accordion>
+
+## Rejection Handling
+
+When customers are rejected, detailed reasons are provided:
+
+```json
+{
+  "status": "rejected",
+  "rejection_reasons": [
+    {
+      "code": "identity_verification_failed",
+      "message": "Unable to verify government ID",
+      "details": {
+        "document_type": "drivers_license",
+        "issue": "document_expired"
+      }
+    },
+    {
+      "code": "address_verification_failed", 
+      "message": "Proof of address document is older than 90 days"
+    }
+  ]
+}
+```
+
+### Common Rejection Codes
+
+- **`identity_verification_failed`** - ID verification issues
+- **`address_verification_failed`** - Address proof problems
+- **`sanctions_match`** - Found on sanctions list
+- **`pep_match`** - Politically exposed person
+- **`high_risk_jurisdiction`** - Customer from restricted region
+- **`incomplete_information`** - Missing required data
+- **`document_quality_poor`** - Unreadable documents
+
+## Customer Updates
+
+Customers can be updated after creation to modify information or add endorsements:
+
+### Updating Personal Information
+
+```bash
+curl -X PUT http://localhost:3000/customers/cust_1234567890abcdef \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "email": "newemail@example.com",
+    "residential_address": {
+      "street_line_1": "456 New Street",
+      "city": "Portland",
+      "subdivision": "US-OR", 
+      "postal_code": "97201",
+      "country": "USA"
+    }
+  }'
+```
+
+### Adding Endorsements
+
+```bash
+curl -X PUT http://localhost:3000/customers/cust_1234567890abcdef \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "endorsements": ["base", "ach", "wire"]
+  }'
+```
+
+## Data Privacy & Security
+
+### Data Handling
+- All PII is encrypted at rest and in transit
+- Access is logged and monitored
+- Data retention follows regulatory requirements
+- GDPR and CCPA compliance for applicable customers
+
+### Data Minimization
+- Only collect necessary information
+- Delete data when no longer required
+- Anonymize data for analytics
+- Provide data export capabilities
+
+## Integration Patterns
+
+### Customer Onboarding Flow
+
+```javascript
+// 1. Create customer
+const customer = await createCustomer({
+  type: 'individual',
+  first_name: 'John',
+  last_name: 'Doe',
+  // ... other required fields
+});
+
+// 2. Check status and requirements
+const customerStatus = await getCustomer(customer.id);
+console.log('Status:', customerStatus.status);
+console.log('Requirements:', customerStatus.requirements_due);
+
+// 3. Handle requirements fulfillment
+if (customerStatus.requirements_due.includes('identity_verification')) {
+  // Guide user through ID verification
+  await initiateIDVerification(customer.id);
+}
+
+// 4. Wait for approval
+while (customerStatus.status !== 'active') {
+  await delay(5000);
+  customerStatus = await getCustomer(customer.id);
+}
+
+// 5. Customer is ready to use platform
+console.log('Customer activated:', customer.id);
+```
+
+### Status Monitoring
+
+```javascript
+function handleCustomerStatus(customer) {
+  switch (customer.status) {
+    case 'active':
+      enableFullPlatformAccess(customer.id);
+      break;
+    case 'under_review':
+      showReviewMessage(customer.id);
+      break;
+    case 'awaiting_questionnaire':
+      redirectToQuestionnaire(customer.id);
+      break;
+    case 'incomplete':
+      showRequirements(customer.requirements_due);
+      break;
+    case 'rejected':
+      handleRejection(customer.rejection_reasons);
+      break;
+    default:
+      showGenericWaitingMessage();
+  }
+}
+```
+
+## Best Practices
+
+### Customer Creation
+- Always validate data before API calls
+- Use proper ISO country and subdivision codes
+- Ensure customers meet age requirements (18+)
+- Collect Terms of Service acceptance before creation
+
+### Status Handling
+- Poll customer status regularly for updates
+- Implement proper error handling for all status values
+- Provide clear user messaging for each status
+- Handle requirements proactively
+
+### Compliance
+- Keep customer data up to date
+- Monitor for status changes that affect permissions
+- Document customer consent for all data uses
+- Implement proper data retention policies
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Wallets" href="/concepts/wallets">
+    Create custodial wallets for your customers
+  </Card>
+  <Card title="Virtual Accounts" href="/concepts/virtual-accounts">
+    Set up banking deposit accounts
+  </Card>
+  <Card title="First Customer Guide" href="/get-started/first-customer">
+    Step-by-step customer creation
+  </Card>
+  <Card title="API Reference" href="/api-reference/authentication">
+    Detailed API documentation
+  </Card>
+</CardGroup>

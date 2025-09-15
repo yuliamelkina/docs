@@ -1,0 +1,511 @@
+---
+title: 'Virtual Accounts'
+description: 'Banking deposit accounts that automatically convert to cryptocurrency'
+---
+
+## Overview
+
+Virtual accounts in Omniwire are unique bank account numbers that customers can use to deposit traditional fiat currencies (USD, EUR) which are then automatically converted to cryptocurrency and delivered to a specified wallet address. They bridge traditional banking and crypto ecosystems seamlessly.
+
+## How Virtual Accounts Work
+
+<Steps>
+  <Step title="Account Creation">
+    Generate unique banking details (routing number, account number) for the customer
+  </Step>
+  <Step title="Deposit Received">
+    Customer sends ACH or Wire transfer to the virtual account
+  </Step>
+  <Step title="Automatic Conversion">
+    Funds are automatically converted to the specified cryptocurrency
+  </Step>
+  <Step title="Delivery">
+    Converted crypto is sent to the customer's designated wallet address
+  </Step>
+</Steps>
+
+## Virtual Account Types
+
+### ACH → Crypto Accounts
+
+Convert incoming ACH transfers to cryptocurrency:
+
+<Card title="USD → USDC (Solana)" icon="arrow-right">
+  ACH deposits automatically convert to USDC on Solana network
+</Card>
+
+### Wire → Crypto Accounts
+
+Convert incoming wire transfers to cryptocurrency:
+
+<Card title="USD → USDC (Ethereum)" icon="arrow-right">
+  Wire deposits convert to USDC on Ethereum or other EVM networks
+</Card>
+
+## Creating Virtual Accounts
+
+### Basic ACH → Solana Account
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/virtual_accounts \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "currency": "usd"
+    },
+    "destination": {
+      "payment_rail": "solana",
+      "currency": "usdc",
+      "address": "SolanaDestination111111111111111111111111111"
+    },
+    "developer_fee_percent": "0.5"
+  }'
+```
+
+```javascript Node.js
+const virtualAccount = await fetch(`http://localhost:3000/customers/${customerId}/virtual_accounts`, {
+  method: 'POST',
+  headers: {
+    'Api-Key': 'test-api-key',
+    'Tenant-Id': 'your-tenant-uuid',
+    'Idempotency-Key': crypto.randomUUID(),
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    source: {
+      currency: 'usd'
+    },
+    destination: {
+      payment_rail: 'solana',
+      currency: 'usdc', 
+      address: 'SolanaDestination111111111111111111111111111'
+    },
+    developer_fee_percent: '0.5'
+  })
+});
+
+const account = await virtualAccount.json();
+console.log('Virtual account created:', account.id);
+```
+
+```python Python
+import requests
+import uuid
+
+response = requests.post(
+    f'http://localhost:3000/customers/{customer_id}/virtual_accounts',
+    headers={
+        'Api-Key': 'test-api-key',
+        'Tenant-Id': 'your-tenant-uuid',
+        'Idempotency-Key': str(uuid.uuid4()),
+        'Content-Type': 'application/json'
+    },
+    json={
+        'source': {'currency': 'usd'},
+        'destination': {
+            'payment_rail': 'solana',
+            'currency': 'usdc',
+            'address': 'SolanaDestination111111111111111111111111111'
+        },
+        'developer_fee_percent': '0.5'
+    }
+)
+
+account = response.json()
+print(f'Virtual account created: {account["id"]}')
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "id": "va_1234567890abcdef",
+  "status": "active",
+  "developer_fee_percent": "0.5",
+  "customer_id": "cust_1234567890abcdef",
+  "created_at": "2024-01-15T10:30:00Z",
+  "source_deposit_instructions": {
+    "currency": "usd",
+    "bank_name": "Lead Bank",
+    "bank_address": "123 Banking Street, New York, NY 10001", 
+    "bank_routing_number": "101019644",
+    "bank_account_number": "9876543210123456",
+    "bank_beneficiary_name": "Omniwire Holdings LLC",
+    "bank_beneficiary_address": "456 Finance Ave, San Francisco, CA 94107",
+    "payment_rail": "ach",
+    "payment_rails": ["ach", "wire"]
+  },
+  "destination": {
+    "currency": "usdc",
+    "payment_rail": "solana",
+    "address": "SolanaDestination111111111111111111111111111",
+    "blockchain_memo": "VA: va_1234567890abcdef"
+  }
+}
+```
+
+## Deposit Instructions
+
+Virtual accounts provide complete banking details that customers can use:
+
+### ACH Instructions
+
+For ACH transfers, customers use:
+
+```json
+{
+  "bank_name": "Lead Bank",
+  "bank_routing_number": "101019644", 
+  "bank_account_number": "9876543210123456",
+  "bank_beneficiary_name": "Omniwire Holdings LLC",
+  "account_reference": "va_1234567890abcdef"
+}
+```
+
+### Wire Instructions
+
+For wire transfers, additional details are provided:
+
+```json
+{
+  "bank_name": "Lead Bank",
+  "bank_address": "123 Banking Street, New York, NY 10001",
+  "bank_routing_number": "101019644",
+  "bank_account_number": "9876543210123456", 
+  "bank_beneficiary_name": "Omniwire Holdings LLC",
+  "bank_beneficiary_address": "456 Finance Ave, San Francisco, CA 94107",
+  "wire_reference": "va_1234567890abcdef"
+}
+```
+
+## Supported Conversions
+
+### Source Currencies
+
+<CardGroup cols={3}>
+  <Card title="USD" icon="dollar-sign">
+    US Dollar via ACH or Wire
+  </Card>
+  <Card title="EUR" icon="euro-sign">
+    Euro via SEPA or Wire  
+  </Card>
+  <Card title="GBP" icon="pound-sign">
+    British Pound via Faster Payments
+  </Card>
+</CardGroup>
+
+### Destination Networks & Assets
+
+<Accordion title="Solana Network">
+**Supported Assets**: USDC, USDT
+**Settlement Time**: ~30 seconds after deposit confirmation
+**Gas Fees**: Paid by Omniwire
+**Address Format**: Base58 Solana addresses
+</Accordion>
+
+<Accordion title="Ethereum Network">  
+**Supported Assets**: USDC, USDT, DAI
+**Settlement Time**: 1-5 minutes after deposit confirmation
+**Gas Fees**: Paid by Omniwire
+**Address Format**: 0x hex addresses
+</Accordion>
+
+<Accordion title="Polygon Network">
+**Supported Assets**: USDC, USDT
+**Settlement Time**: ~30 seconds after deposit confirmation
+**Gas Fees**: Paid by Omniwire  
+**Address Format**: 0x hex addresses (same as Ethereum)
+</Accordion>
+
+## Virtual Account Management
+
+### Retrieving Account Details
+
+Get specific virtual account information:
+
+```bash
+curl -X GET http://localhost:3000/customers/cust_1234567890abcdef/virtual_accounts/va_1234567890abcdef \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+### Listing Customer Virtual Accounts
+
+Get all virtual accounts for a customer:
+
+```bash
+curl -X GET http://localhost:3000/customers/cust_1234567890abcdef/virtual_accounts \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+Response:
+```json
+[
+  {
+    "id": "va_ach_to_solana_123",
+    "status": "active", 
+    "source_deposit_instructions": {
+      "currency": "usd",
+      "payment_rails": ["ach"]
+    },
+    "destination": {
+      "currency": "usdc",
+      "payment_rail": "solana"
+    }
+  },
+  {
+    "id": "va_wire_to_ethereum_456",
+    "status": "active",
+    "source_deposit_instructions": {
+      "currency": "usd",
+      "payment_rails": ["wire"]
+    },
+    "destination": {
+      "currency": "usdc", 
+      "payment_rail": "ethereum"
+    }
+  }
+]
+```
+
+## Fee Structure
+
+### Developer Fees
+
+Set custom fee percentages on virtual account creation:
+
+```json
+{
+  "developer_fee_percent": "0.5"  // 0.5% fee on all conversions
+}
+```
+
+**Fee Calculation**:
+- Applied to the source deposit amount
+- Deducted before currency conversion
+- Minimum fee may apply based on payment rail
+
+### Network Fees
+
+Omniwire covers blockchain network fees:
+- **Solana**: Transaction fees paid by Omniwire
+- **Ethereum**: Gas fees paid by Omniwire  
+- **Polygon**: MATIC fees paid by Omniwire
+
+### Conversion Fees
+
+Currency conversion includes:
+- **Exchange Rate Spread**: Typically 0.1-0.5%
+- **Processing Fee**: Fixed fee per conversion
+- **Network Settlement**: Blockchain transaction costs
+
+## Virtual Account Status
+
+Virtual accounts can have different operational statuses:
+
+<CardGroup cols={2}>
+  <Card title="active" icon="check-circle">
+    Ready to receive deposits and process conversions
+  </Card>
+  <Card title="pending" icon="clock">
+    Being set up, not yet ready for deposits
+  </Card>
+  <Card title="suspended" icon="pause">
+    Temporarily disabled, deposits will be held
+  </Card>
+  <Card title="closed" icon="x-circle">
+    Permanently closed, no longer accepting deposits
+  </Card>
+</CardGroup>
+
+## Deposit Processing Flow
+
+### 1. Deposit Detection
+- Incoming ACH/Wire transfers are detected automatically
+- Deposits are matched to virtual accounts using account numbers
+- Customer notification can be sent when deposits are received
+
+### 2. Compliance Screening
+- All deposits undergo AML/KYC screening
+- Large deposits may require additional verification
+- Suspicious activity is flagged for review
+
+### 3. Currency Conversion
+- USD converted to specified cryptocurrency at current market rates
+- Exchange rates locked at time of conversion
+- Rate spread and fees applied transparently
+
+### 4. Blockchain Settlement
+- Converted crypto is sent to destination address
+- Transaction hash provided for verification
+- Blockchain confirmation typically within minutes
+
+### 5. Notification & Reporting
+- Customer notified of successful conversion
+- Detailed receipt with all fees and rates
+- Transaction history maintained for compliance
+
+## Integration Patterns
+
+### Dynamic Address Generation
+
+Create virtual accounts with customer wallet addresses:
+
+```javascript
+async function createVirtualAccountForCustomer(customerId, chain = 'solana') {
+  // First, ensure customer has a wallet on the destination chain
+  let wallet = await getCustomerWallet(customerId, chain);
+  if (!wallet) {
+    wallet = await createWallet(customerId, chain);
+  }
+  
+  // Create virtual account with wallet as destination
+  const virtualAccount = await createVirtualAccount(customerId, {
+    source: { currency: 'usd' },
+    destination: {
+      payment_rail: chain,
+      currency: 'usdc',
+      address: wallet.address
+    },
+    developer_fee_percent: '0.25'
+  });
+  
+  return {
+    virtualAccount,
+    wallet,
+    depositInstructions: virtualAccount.source_deposit_instructions
+  };
+}
+```
+
+### Multi-Account Strategy
+
+Create multiple virtual accounts for different use cases:
+
+```javascript
+async function setupMultipleVirtualAccounts(customerId) {
+  const accounts = await Promise.all([
+    // Small amounts → Solana (fast, cheap)
+    createVirtualAccount(customerId, {
+      source: { currency: 'usd' },
+      destination: { 
+        payment_rail: 'solana',
+        currency: 'usdc',
+        address: await getWalletAddress(customerId, 'solana')
+      },
+      developer_fee_percent: '0.5'
+    }),
+    
+    // Large amounts → Ethereum (established, secure)
+    createVirtualAccount(customerId, {
+      source: { currency: 'usd' },
+      destination: {
+        payment_rail: 'ethereum', 
+        currency: 'usdc',
+        address: await getWalletAddress(customerId, 'ethereum')
+      },
+      developer_fee_percent: '0.25'
+    })
+  ]);
+  
+  return {
+    smallAmounts: accounts[0],
+    largeAmounts: accounts[1]
+  };
+}
+```
+
+### Deposit Monitoring
+
+Monitor incoming deposits and conversions:
+
+```javascript
+async function monitorVirtualAccountActivity(customerId) {
+  const virtualAccounts = await getVirtualAccounts(customerId);
+  
+  for (const account of virtualAccounts) {
+    // Check for recent deposits (implement via webhooks in production)
+    const recentActivity = await getAccountActivity(account.id);
+    
+    recentActivity.forEach(activity => {
+      console.log(`Deposit processed: ${activity.amount} ${activity.source_currency} → ${activity.destination_amount} ${activity.destination_currency}`);
+      
+      // Notify customer
+      notifyCustomer(customerId, {
+        type: 'deposit_converted',
+        sourceAmount: activity.amount,
+        destinationAmount: activity.destination_amount,
+        transactionHash: activity.destination_tx_hash
+      });
+    });
+  }
+}
+```
+
+## Best Practices
+
+### Account Creation
+- Create virtual accounts only when needed
+- Use appropriate destination addresses (preferably custodial wallets)
+- Set reasonable developer fee percentages (0.1% - 1.0%)
+- Consider customer's expected deposit volumes
+
+### Customer Communication
+- Provide clear deposit instructions to customers
+- Explain conversion process and timeline
+- Share fee structure transparently
+- Send notifications for successful conversions
+
+### Security & Compliance
+- Monitor for unusual deposit patterns
+- Implement deposit limits based on customer verification level
+- Maintain detailed records of all conversions
+- Report large transactions as required by regulations
+
+### User Experience
+- Display virtual account details prominently in your UI
+- Provide QR codes for easy sharing of deposit instructions
+- Show conversion rates and fees before customers deposit
+- Track and display deposit/conversion history
+
+## Limitations
+
+### Deposit Minimums
+- ACH: Minimum $10 deposit
+- Wire: Minimum $100 deposit  
+- SEPA: Minimum €10 deposit
+
+### Processing Times
+- **ACH**: 1-3 business days to receive, immediate conversion
+- **Wire**: Same day to receive, immediate conversion
+- **SEPA**: Same business day, immediate conversion
+
+### Currency Restrictions
+- Only supported source currencies can be accepted
+- Destination cryptocurrencies limited to supported tokens
+- Some currency pairs may not be available
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Transfers" href="/concepts/transfers">
+    Understand how virtual accounts create transfers automatically
+  </Card>
+  <Card title="Wallets" href="/concepts/wallets">
+    Learn about destination wallet management
+  </Card>
+  <Card title="Onramp Guide" href="/guides/onramp-flow">
+    Build complete fiat-to-crypto onboarding flows
+  </Card>
+  <Card title="API Reference" href="/api-reference/authentication">
+    Detailed API documentation for virtual accounts
+  </Card>
+</CardGroup>

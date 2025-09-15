@@ -1,0 +1,474 @@
+---
+title: 'Custodial Wallets'
+description: 'Multi-chain wallet management and balance tracking'
+---
+
+## Overview
+
+Custodial wallets in Omniwire provide secure, managed storage for digital assets across multiple blockchain networks. Each customer can have wallets on different chains, with Omniwire handling key management, security, and transaction signing.
+
+## How Custodial Wallets Work
+
+<CardGroup cols={2}>
+  <Card title="Secure Key Management" icon="key">
+    Private keys are generated and stored securely by Omniwire
+  </Card>
+  <Card title="Multi-Chain Support" icon="link">
+    Create wallets on Solana, Ethereum, Polygon, and other networks
+  </Card>
+  <Card title="Real-Time Balances" icon="chart-line">
+    Track token balances across all supported assets
+  </Card>
+  <Card title="Automated Operations" icon="robot">
+    Omniwire handles transaction signing and network interactions
+  </Card>
+</CardGroup>
+
+## Supported Blockchain Networks
+
+### Layer 1 Networks
+
+<Accordion title="Solana">
+**Network**: Solana Mainnet
+**Native Token**: SOL
+**Common Assets**: USDC, USDT, SOL
+**Features**: 
+- Fast transaction finality (~400ms)
+- Low transaction costs
+- High throughput network
+- SPL token standard support
+</Accordion>
+
+<Accordion title="Ethereum">
+**Network**: Ethereum Mainnet
+**Native Token**: ETH  
+**Common Assets**: USDC, USDT, ETH, DAI
+**Features**:
+- Largest DeFi ecosystem
+- ERC-20 token standard
+- Smart contract capabilities  
+- Established institutional adoption
+</Accordion>
+
+### Layer 2 Networks
+
+<Accordion title="Polygon">
+**Network**: Polygon PoS Chain
+**Native Token**: MATIC
+**Common Assets**: USDC, USDT, WETH
+**Features**:
+- Ethereum-compatible
+- Lower gas fees than Ethereum
+- Fast transaction confirmation
+- Bridge to Ethereum mainnet
+</Accordion>
+
+<Accordion title="Arbitrum">
+**Network**: Arbitrum One
+**Native Token**: ETH
+**Common Assets**: USDC, USDT, ARB
+**Features**:
+- Ethereum Layer 2 scaling
+- Lower costs than mainnet
+- Full EVM compatibility
+- Growing DeFi ecosystem
+</Accordion>
+
+<Accordion title="Optimism">
+**Network**: Optimism Mainnet  
+**Native Token**: ETH
+**Common Assets**: USDC, USDT, OP
+**Features**:
+- Optimistic rollup technology
+- Fast withdrawal to Ethereum
+- EVM equivalence
+- Developer-friendly tools
+</Accordion>
+
+<Accordion title="Avalanche">
+**Network**: Avalanche C-Chain
+**Native Token**: AVAX
+**Common Assets**: USDC, USDT, WAVAX
+**Features**:
+- Sub-second finality
+- Low transaction fees
+- Ethereum compatibility
+- Multiple subnet support
+</Accordion>
+
+## Creating Wallets
+
+### Basic Wallet Creation
+
+Create a wallet for a customer on a specific chain:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/wallets \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chain": "solana"
+  }'
+```
+
+```javascript Node.js
+const wallet = await fetch(`http://localhost:3000/customers/${customerId}/wallets`, {
+  method: 'POST',
+  headers: {
+    'Api-Key': 'test-api-key',
+    'Tenant-Id': 'your-tenant-uuid',
+    'Idempotency-Key': crypto.randomUUID(),
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    chain: 'solana'
+  })
+});
+
+const walletData = await wallet.json();
+console.log('Wallet created:', walletData.address);
+```
+
+```python Python
+import requests
+import uuid
+
+response = requests.post(
+    f'http://localhost:3000/customers/{customer_id}/wallets',
+    headers={
+        'Api-Key': 'test-api-key',
+        'Tenant-Id': 'your-tenant-uuid',
+        'Idempotency-Key': str(uuid.uuid4()),
+        'Content-Type': 'application/json'
+    },
+    json={'chain': 'solana'}
+)
+
+wallet = response.json()
+print(f'Wallet created: {wallet["address"]}')
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "id": "wallet_solana_1234567890",
+  "chain": "solana",
+  "address": "SolanaWalletAddress1111111111111111111111111111",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z",
+  "balances": [
+    {
+      "balance": "0.0",
+      "currency": "SOL",
+      "chain": "solana"
+    },
+    {
+      "balance": "0.0", 
+      "currency": "USDC",
+      "chain": "solana",
+      "contract_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    }
+  ]
+}
+```
+
+### Multi-Chain Wallet Setup
+
+Create wallets on multiple networks for a customer:
+
+```javascript
+const chains = ['solana', 'ethereum', 'polygon', 'arbitrum'];
+
+const wallets = await Promise.all(
+  chains.map(async (chain) => {
+    const response = await fetch(`http://localhost:3000/customers/${customerId}/wallets`, {
+      method: 'POST',
+      headers: {
+        'Api-Key': 'test-api-key',
+        'Tenant-Id': 'your-tenant-uuid',
+        'Idempotency-Key': crypto.randomUUID(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ chain })
+    });
+    return response.json();
+  })
+);
+
+console.log('Created wallets on:', wallets.map(w => w.chain));
+```
+
+## Wallet Management
+
+### Retrieving Wallet Information
+
+Get wallet details including current balances:
+
+```bash
+curl -X GET http://localhost:3000/customers/cust_1234567890abcdef/wallets/wallet_solana_1234567890 \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+### Listing Customer Wallets
+
+Get all wallets for a customer:
+
+```bash
+curl -X GET http://localhost:3000/customers/cust_1234567890abcdef/wallets \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+Response:
+```json
+{
+  "count": 2,
+  "data": [
+    {
+      "id": "wallet_solana_1234567890",
+      "chain": "solana", 
+      "address": "SolanaWalletAddress1111111111111111111111111111",
+      "balances": [
+        {
+          "balance": "10.50",
+          "currency": "USDC", 
+          "chain": "solana",
+          "contract_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+        }
+      ]
+    },
+    {
+      "id": "wallet_ethereum_1234567890",
+      "chain": "ethereum",
+      "address": "0x742d35Cc6645C1D91Cc0b1234567890abcdef123",
+      "balances": [
+        {
+          "balance": "25.75",
+          "currency": "USDC",
+          "chain": "ethereum", 
+          "contract_address": "0xA0b86a33E6416c06D3edf66F0b8c68B5f0c8E8f8"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Balance Tracking
+
+### Real-Time Balance Updates
+
+Wallets automatically track balances for supported assets on each network:
+
+### Solana Balances
+- **SOL** - Native Solana token
+- **USDC** - USD Coin (SPL token)
+- **USDT** - Tether USD (SPL token)
+- Other SPL tokens as supported
+
+### Ethereum Balances
+- **ETH** - Native Ethereum
+- **USDC** - USD Coin (ERC-20)
+- **USDT** - Tether USD (ERC-20)
+- **DAI** - Dai Stablecoin (ERC-20)
+- Other ERC-20 tokens as supported
+
+### Balance Information
+
+Each balance entry includes:
+
+```json
+{
+  "balance": "123.456789",
+  "currency": "USDC",
+  "chain": "solana", 
+  "contract_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+}
+```
+
+**Fields:**
+- **`balance`** - Current balance as string to preserve precision
+- **`currency`** - Token symbol (e.g., USDC, ETH, SOL)
+- **`chain`** - Blockchain network name  
+- **`contract_address`** - Token contract address (null for native tokens)
+
+## Address Formats
+
+Each blockchain network uses different address formats:
+
+### Solana Addresses
+- **Format**: Base58 encoded, 32-44 characters
+- **Example**: `SolanaWalletAddress1111111111111111111111111111`
+- **Validation**: Must be valid Solana public key
+
+### Ethereum-Compatible Addresses  
+- **Format**: Hexadecimal, 42 characters starting with 0x
+- **Example**: `0x742d35Cc6645C1D91Cc0b1234567890abcdef123`
+- **Networks**: Ethereum, Polygon, Arbitrum, Optimism, Avalanche
+- **Validation**: Must pass EIP-55 checksum validation
+
+## Wallet Security
+
+### Key Management
+- Private keys are generated using cryptographically secure random number generators
+- Keys are encrypted at rest using AES-256 encryption
+- Hardware security modules (HSMs) protect key material
+- Multi-signature schemes for high-value operations
+
+### Access Controls
+- Wallets are tied to specific customers and cannot be transferred
+- API access requires valid authentication and tenant isolation
+- All wallet operations are logged and monitored
+- Rate limiting prevents excessive API usage
+
+### Transaction Signing
+- All transactions are signed server-side by Omniwire
+- Customers never have direct access to private keys
+- Transaction validation prevents unauthorized operations
+- Multiple confirmation layers for high-value transactions
+
+## Integration Patterns
+
+### Wallet Discovery
+
+Find all wallets for a customer:
+
+```javascript
+async function getCustomerWallets(customerId) {
+  const response = await fetch(`http://localhost:3000/customers/${customerId}/wallets`, {
+    headers: {
+      'Api-Key': 'test-api-key',
+      'Tenant-Id': 'your-tenant-uuid'
+    }
+  });
+  
+  const { data: wallets } = await response.json();
+  
+  // Group wallets by chain
+  const walletsByChain = wallets.reduce((acc, wallet) => {
+    acc[wallet.chain] = wallet;
+    return acc;
+  }, {});
+  
+  return walletsByChain;
+}
+```
+
+### Balance Monitoring
+
+Track balance changes across all wallets:
+
+```javascript
+async function monitorCustomerBalances(customerId) {
+  const wallets = await getCustomerWallets(customerId);
+  
+  const totalBalances = {};
+  
+  Object.values(wallets).forEach(wallet => {
+    wallet.balances.forEach(balance => {
+      const key = balance.currency;
+      if (!totalBalances[key]) {
+        totalBalances[key] = 0;
+      }
+      totalBalances[key] += parseFloat(balance.balance);
+    });
+  });
+  
+  return totalBalances;
+}
+```
+
+### Cross-Chain Operations
+
+Use wallets as sources and destinations for transfers:
+
+```javascript
+async function setupCrossChainTransfer(customerId, fromChain, toChain, amount, currency) {
+  const wallets = await getCustomerWallets(customerId);
+  
+  const sourceWallet = wallets[fromChain];
+  const destinationWallet = wallets[toChain];
+  
+  const transfer = await createTransfer({
+    amount,
+    on_behalf_of: customerId,
+    source: {
+      payment_rail: fromChain,
+      currency: currency.toLowerCase(),
+      from_address: sourceWallet.address
+    },
+    destination: {
+      payment_rail: toChain,
+      currency: currency.toLowerCase(),
+      to_address: destinationWallet.address,
+      wallet_id: destinationWallet.id
+    }
+  });
+  
+  return transfer;
+}
+```
+
+## Best Practices
+
+### Wallet Creation
+- Create wallets only when needed by your application flow
+- Use meaningful idempotency keys to prevent duplicate creation
+- Store wallet IDs and addresses in your application database
+- Consider creating wallets on multiple chains for flexibility
+
+### Balance Management
+- Poll wallet balances regularly for UI updates
+- Cache balance information appropriately
+- Handle precision carefully with string-based amounts
+- Implement balance thresholds for automated actions
+
+### Security Considerations
+- Never expose wallet private keys or seed phrases
+- Validate all addresses before using in transfers
+- Implement proper error handling for wallet operations
+- Monitor wallet activity for unusual patterns
+
+### Performance Optimization
+- Batch wallet creation requests when possible
+- Cache wallet information to reduce API calls
+- Use appropriate timeouts for balance queries
+- Implement exponential backoff for failed requests
+
+## Limitations
+
+### Supported Assets
+- Only pre-approved tokens are tracked in balances
+- New token support requires platform updates
+- Some exotic or new tokens may not be available immediately
+
+### Transaction Capabilities
+- Wallets are primarily for receiving and storing assets
+- Outbound transactions are handled through the transfer system
+- Direct transaction broadcasting is not supported
+- Smart contract interactions are limited to supported operations
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Transfers" href="/concepts/transfers">
+    Learn how to move funds between wallets and external accounts
+  </Card>
+  <Card title="Virtual Accounts" href="/concepts/virtual-accounts">
+    Set up accounts that automatically fund wallets
+  </Card>
+  <Card title="Onramp Guide" href="/guides/onramp-flow">
+    Build complete fiat-to-crypto conversion flows
+  </Card>
+  <Card title="API Reference" href="/api-reference/authentication">
+    Detailed API documentation for wallet endpoints
+  </Card>
+</CardGroup>

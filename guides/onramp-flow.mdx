@@ -1,0 +1,756 @@
+---
+title: 'Building an Onramp Flow'
+description: 'Complete guide to building fiat-to-crypto conversion experiences'
+---
+
+## Overview
+
+An onramp flow enables users to convert traditional fiat currency (USD, EUR) into cryptocurrency. This guide walks through building a complete onramp experience using Omniwire's APIs, from customer onboarding to crypto delivery.
+
+## Onramp Architecture
+
+<Steps>
+  <Step title="Customer Onboarding">
+    Create and verify customer identity with KYC
+  </Step>
+  <Step title="Wallet Setup">
+    Create custodial wallets on desired blockchain networks
+  </Step>
+  <Step title="Payment Method">
+    Set up bank deposits via transfers or virtual accounts
+  </Step>
+  <Step title="Conversion & Delivery">
+    Convert fiat to crypto and deliver to customer wallet
+  </Step>
+</Steps>
+
+## Implementation Approaches
+
+### Approach 1: Transfer-Based Onramp
+
+Direct transfers where customers send funds to specific deposit instructions:
+
+<CardGroup cols={2}>
+  <Card title="✅ Pros" icon="check">
+    - Full control over each transaction
+    - Custom fee structures per transfer
+    - Detailed transfer tracking
+    - Flexible source/destination combinations
+  </Card>
+  <Card title="❌ Cons" icon="x">
+    - Requires new deposit instructions per transfer
+    - More complex user experience
+    - Manual transfer creation for each deposit
+  </Card>
+</CardGroup>
+
+### Approach 2: Virtual Account Onramp
+
+Persistent bank accounts that automatically convert deposits:
+
+<CardGroup cols={2}>
+  <Card title="✅ Pros" icon="check">
+    - Consistent bank account details for customers
+    - Automatic processing of deposits
+    - Simplified user experience
+    - Great for recurring deposits
+  </Card>
+  <Card title="❌ Cons" icon="x">
+    - Fixed fee structure per virtual account
+    - Less granular control over individual deposits
+    - Limited to ACH and Wire sources
+  </Card>
+</CardGroup>
+
+## Building a Transfer-Based Onramp
+
+### Step 1: Customer Onboarding
+
+First, create and verify your customer:
+
+<CodeGroup>
+
+```javascript Node.js
+async function onboardCustomer(customerData) {
+  // Create customer
+  const customer = await fetch('http://localhost:3000/customers', {
+    method: 'POST',
+    headers: {
+      'Api-Key': 'test-api-key',
+      'Tenant-Id': 'your-tenant-uuid',
+      'Idempotency-Key': crypto.randomUUID(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      type: 'individual',
+      first_name: customerData.firstName,
+      last_name: customerData.lastName,
+      email: customerData.email,
+      birth_date: customerData.birthDate,
+      residential_address: customerData.address,
+      identifying_information: [{
+        type: 'ssn',
+        issuing_country: 'USA',
+        number: customerData.ssn
+      }],
+      endorsements: ['base', 'ach'],
+      signed_agreement_id: customerData.agreementId
+    })
+  });
+  
+  return customer.json();
+}
+
+// Wait for customer verification
+async function waitForVerification(customerId, maxAttempts = 60) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const customer = await getCustomer(customerId);
+    
+    if (customer.status === 'active') {
+      return customer;
+    }
+    
+    if (customer.status === 'rejected') {
+      throw new Error('Customer verification rejected');
+    }
+    
+    // Check every 30 seconds
+    await new Promise(resolve => setTimeout(resolve, 30000));
+  }
+  
+  throw new Error('Customer verification timeout');
+}
+```
+
+```python Python
+import requests
+import uuid
+import time
+
+async def onboard_customer(customer_data):
+    response = requests.post(
+        'http://localhost:3000/customers',
+        headers={
+            'Api-Key': 'test-api-key',
+            'Tenant-Id': 'your-tenant-uuid',
+            'Idempotency-Key': str(uuid.uuid4()),
+            'Content-Type': 'application/json'
+        },
+        json={
+            'type': 'individual',
+            'first_name': customer_data['firstName'],
+            'last_name': customer_data['lastName'],
+            'email': customer_data['email'],
+            'birth_date': customer_data['birthDate'],
+            'residential_address': customer_data['address'],
+            'identifying_information': [{
+                'type': 'ssn',
+                'issuing_country': 'USA',
+                'number': customer_data['ssn']
+            }],
+            'endorsements': ['base', 'ach'],
+            'signed_agreement_id': customer_data['agreementId']
+        }
+    )
+    
+    return response.json()
+
+def wait_for_verification(customer_id, max_attempts=60):
+    for i in range(max_attempts):
+        customer = get_customer(customer_id)
+        
+        if customer['status'] == 'active':
+            return customer
+        
+        if customer['status'] == 'rejected':
+            raise Exception('Customer verification rejected')
+        
+        time.sleep(30)  # Wait 30 seconds
+    
+    raise Exception('Customer verification timeout')
+```
+
+</CodeGroup>
+
+### Step 2: Create Destination Wallet
+
+Set up a custodial wallet to receive the converted cryptocurrency:
+
+```javascript
+async function createDestinationWallet(customerId, chain = 'solana') {
+  const wallet = await fetch(`http://localhost:3000/customers/${customerId}/wallets`, {
+    method: 'POST',
+    headers: {
+      'Api-Key': 'test-api-key',
+      'Tenant-Id': 'your-tenant-uuid',
+      'Idempotency-Key': crypto.randomUUID(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ chain })
+  });
+  
+  return wallet.json();
+}
+```
+
+### Step 3: Create Onramp Transfer
+
+Create a transfer that converts ACH deposits to cryptocurrency:
+
+```javascript
+async function createOnrampTransfer(customerId, amount, destinationAddress) {
+  const transfer = await fetch('http://localhost:3000/transfers', {
+    method: 'POST',
+    headers: {
+      'Api-Key': 'test-api-key',
+      'Tenant-Id': 'your-tenant-uuid',
+      'Idempotency-Key': crypto.randomUUID(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      amount,
+      on_behalf_of: customerId,
+      source: {
+        payment_rail: 'ach_push',
+        currency: 'usd'
+      },
+      destination: {
+        payment_rail: 'solana',
+        currency: 'usdc',
+        to_address: destinationAddress
+      }
+    })
+  });
+  
+  const transferData = await transfer.json();
+  
+  return {
+    transferId: transferData.id,
+    depositInstructions: transferData.source_deposit_instructions,
+    estimatedDelivery: transferData.estimated_completion
+  };
+}
+```
+
+### Step 4: Complete Onramp Flow
+
+Put it all together:
+
+```javascript
+async function completeOnrampFlow(customerData, onrampAmount) {
+  try {
+    // 1. Onboard customer
+    console.log('Creating customer...');
+    const customer = await onboardCustomer(customerData);
+    
+    // 2. Wait for verification
+    console.log('Waiting for customer verification...');
+    const verifiedCustomer = await waitForVerification(customer.id);
+    console.log('Customer verified:', verifiedCustomer.id);
+    
+    // 3. Create destination wallet
+    console.log('Creating Solana wallet...');
+    const wallet = await createDestinationWallet(customer.id, 'solana');
+    console.log('Wallet created:', wallet.address);
+    
+    // 4. Create onramp transfer
+    console.log('Setting up onramp transfer...');
+    const onramp = await createOnrampTransfer(
+      customer.id,
+      onrampAmount,
+      wallet.address
+    );
+    
+    return {
+      customerId: customer.id,
+      walletAddress: wallet.address,
+      transferId: onramp.transferId,
+      depositInstructions: onramp.depositInstructions,
+      estimatedDelivery: onramp.estimatedDelivery
+    };
+    
+  } catch (error) {
+    console.error('Onramp flow failed:', error);
+    throw error;
+  }
+}
+
+// Usage
+const result = await completeOnrampFlow({
+  firstName: 'John',
+  lastName: 'Doe',
+  email: 'john.doe@example.com',
+  birthDate: '1990-01-01',
+  address: {
+    street_line_1: '123 Main Street',
+    city: 'Austin',
+    subdivision: 'US-TX',
+    postal_code: '73301',
+    country: 'USA'
+  },
+  ssn: '123-45-6789',
+  agreementId: 'agr_signed_12345'
+}, '100.00');
+
+console.log('Onramp setup complete:', result);
+```
+
+## Building a Virtual Account Onramp
+
+### Complete Virtual Account Flow
+
+```javascript
+async function createVirtualAccountOnramp(customerData) {
+  try {
+    // 1. Create and verify customer
+    const customer = await onboardCustomer(customerData);
+    const verifiedCustomer = await waitForVerification(customer.id);
+    
+    // 2. Create destination wallet
+    const wallet = await createDestinationWallet(customer.id, 'solana');
+    
+    // 3. Create virtual account
+    const virtualAccount = await fetch(`http://localhost:3000/customers/${customer.id}/virtual_accounts`, {
+      method: 'POST',
+      headers: {
+        'Api-Key': 'test-api-key',
+        'Tenant-Id': 'your-tenant-uuid',
+        'Idempotency-Key': crypto.randomUUID(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        source: { currency: 'usd' },
+        destination: {
+          payment_rail: 'solana',
+          currency: 'usdc',
+          address: wallet.address
+        },
+        developer_fee_percent: '0.25'
+      })
+    });
+    
+    const accountData = await virtualAccount.json();
+    
+    return {
+      customerId: customer.id,
+      walletAddress: wallet.address,
+      virtualAccountId: accountData.id,
+      bankingDetails: accountData.source_deposit_instructions
+    };
+    
+  } catch (error) {
+    console.error('Virtual account onramp failed:', error);
+    throw error;
+  }
+}
+```
+
+## User Experience Patterns
+
+### Progressive Onramp UI
+
+```javascript
+class OnrampWizard {
+  constructor() {
+    this.currentStep = 1;
+    this.customerData = {};
+  }
+  
+  // Step 1: Collect basic information
+  async collectBasicInfo(formData) {
+    this.customerData = { ...formData };
+    this.showStep(2);
+  }
+  
+  // Step 2: Identity verification
+  async verifyIdentity(identityData) {
+    this.customerData.identifying_information = identityData;
+    
+    // Create customer
+    this.customer = await onboardCustomer(this.customerData);
+    this.showVerificationPending();
+    
+    // Poll for verification
+    this.pollVerificationStatus();
+  }
+  
+  // Step 3: Set up onramp method
+  async setupOnramp(onrampType, amount) {
+    if (onrampType === 'transfer') {
+      return this.createTransferOnramp(amount);
+    } else {
+      return this.createVirtualAccountOnramp();
+    }
+  }
+  
+  // Step 4: Show deposit instructions
+  showDepositInstructions(instructions) {
+    this.displayBankingDetails(instructions);
+    this.startTransferMonitoring();
+  }
+  
+  async pollVerificationStatus() {
+    const checkStatus = async () => {
+      const customer = await getCustomer(this.customer.id);
+      
+      if (customer.status === 'active') {
+        this.showStep(3);
+      } else if (customer.status === 'rejected') {
+        this.showRejectionMessage(customer.rejection_reasons);
+      } else {
+        // Check again in 30 seconds
+        setTimeout(checkStatus, 30000);
+      }
+    };
+    
+    checkStatus();
+  }
+  
+  async startTransferMonitoring() {
+    if (this.transferId) {
+      const checkTransfer = async () => {
+        const transfer = await getTransfer(this.transferId);
+        
+        switch (transfer.state) {
+          case 'awaiting_funds':
+            this.showStatus('Waiting for your deposit...');
+            setTimeout(checkTransfer, 60000);
+            break;
+          case 'funds_received':
+            this.showStatus('Deposit received, converting to crypto...');
+            setTimeout(checkTransfer, 30000);
+            break;
+          case 'payment_processed':
+            this.showSuccess(transfer.receipt);
+            break;
+          case 'error':
+          case 'undeliverable':
+            this.showError(transfer.error);
+            break;
+          default:
+            setTimeout(checkTransfer, 30000);
+        }
+      };
+      
+      checkTransfer();
+    }
+  }
+}
+```
+
+### Mobile-Optimized Onramp
+
+```javascript
+class MobileOnramp {
+  async quickOnramp(phoneNumber, email, amount) {
+    // Simplified mobile flow
+    return {
+      // Step 1: Phone verification
+      verificationCode: await this.sendSMSVerification(phoneNumber),
+      
+      // Step 2: Minimal KYC
+      kycLink: await this.generateKYCLink(email),
+      
+      // Step 3: One-tap onramp
+      onrampSetup: await this.createInstantOnramp(amount)
+    };
+  }
+  
+  async createInstantOnramp(amount) {
+    // Create customer with minimal required info
+    const customer = await this.createMinimalCustomer();
+    
+    // Create virtual account for instant setup  
+    const virtualAccount = await this.createVirtualAccount(customer.id);
+    
+    return {
+      customerId: customer.id,
+      bankAccount: virtualAccount.source_deposit_instructions,
+      qrCode: this.generateBankingQR(virtualAccount.source_deposit_instructions)
+    };
+  }
+}
+```
+
+## Advanced Features
+
+### Multi-Chain Onramp
+
+Allow users to choose destination blockchain:
+
+```javascript
+async function createMultiChainOnramp(customerId, amount, preferredChain) {
+  const supportedChains = ['solana', 'ethereum', 'polygon', 'arbitrum'];
+  
+  if (!supportedChains.includes(preferredChain)) {
+    throw new Error(`Chain ${preferredChain} not supported`);
+  }
+  
+  // Create wallet on preferred chain
+  const wallet = await createDestinationWallet(customerId, preferredChain);
+  
+  // Create transfer with optimal asset for that chain
+  const assetMapping = {
+    solana: 'usdc',
+    ethereum: 'usdc', 
+    polygon: 'usdc',
+    arbitrum: 'usdc'
+  };
+  
+  return createOnrampTransfer(
+    customerId,
+    amount,
+    wallet.address,
+    preferredChain,
+    assetMapping[preferredChain]
+  );
+}
+```
+
+### Scheduled/Recurring Onramps
+
+Set up recurring crypto purchases:
+
+```javascript
+async function createRecurringOnramp(customerId, amount, frequency = 'weekly') {
+  const wallet = await getCustomerWallet(customerId, 'solana');
+  
+  // Create virtual account for consistent bank details
+  const virtualAccount = await createVirtualAccount(customerId, {
+    source: { currency: 'usd' },
+    destination: {
+      payment_rail: 'solana',
+      currency: 'usdc',
+      address: wallet.address
+    },
+    developer_fee_percent: '0.20'
+  });
+  
+  // Set up automated ACH pulls (if supported)
+  const recurringSetup = await setupRecurringACH({
+    virtualAccountId: virtualAccount.id,
+    amount,
+    frequency,
+    startDate: new Date()
+  });
+  
+  return {
+    virtualAccount,
+    recurringSetup,
+    bankingInstructions: virtualAccount.source_deposit_instructions
+  };
+}
+```
+
+### Onramp with Price Protection
+
+Lock in crypto prices during the onramp process:
+
+```javascript
+async function createProtectedOnramp(customerId, usdAmount, cryptoAmount, priceQuote) {
+  // Create transfer with price guarantee
+  const transfer = await createOnrampTransfer(customerId, usdAmount, walletAddress, {
+    priceProtection: {
+      guaranteedRate: priceQuote.rate,
+      expiresAt: priceQuote.expiresAt,
+      minimumOutput: cryptoAmount
+    }
+  });
+  
+  return transfer;
+}
+```
+
+## Error Handling & Recovery
+
+### Comprehensive Error Management
+
+```javascript
+class OnrampErrorHandler {
+  async handleOnrampError(error, context) {
+    switch (error.type) {
+      case 'customer_verification_failed':
+        return this.handleKYCFailure(error, context);
+      
+      case 'insufficient_endorsements':
+        return this.handleEndorsementIssue(error, context);
+      
+      case 'transfer_failed':
+        return this.handleTransferFailure(error, context);
+      
+      case 'deposit_timeout':
+        return this.handleDepositTimeout(error, context);
+      
+      default:
+        return this.handleGenericError(error, context);
+    }
+  }
+  
+  async handleKYCFailure(error, context) {
+    // Analyze rejection reasons
+    const rejectionReasons = error.details.rejection_reasons;
+    
+    const recoveryActions = rejectionReasons.map(reason => {
+      switch (reason.code) {
+        case 'identity_verification_failed':
+          return {
+            action: 'retry_id_verification',
+            message: 'Please upload a clearer photo of your ID',
+            canRetry: true
+          };
+        
+        case 'address_verification_failed':
+          return {
+            action: 'update_address_proof',
+            message: 'Please provide a recent utility bill or bank statement',
+            canRetry: true
+          };
+        
+        case 'sanctions_match':
+          return {
+            action: 'contact_support',
+            message: 'Please contact our support team',
+            canRetry: false
+          };
+        
+        default:
+          return {
+            action: 'contact_support',
+            message: 'Please contact support for assistance',
+            canRetry: false
+          };
+      }
+    });
+    
+    return {
+      canRecover: recoveryActions.some(action => action.canRetry),
+      recoveryActions,
+      nextSteps: recoveryActions.filter(action => action.canRetry)
+    };
+  }
+  
+  async handleTransferFailure(error, context) {
+    const transfer = await getTransfer(context.transferId);
+    
+    switch (transfer.state) {
+      case 'undeliverable':
+        // Issue with destination address
+        return {
+          canRecover: true,
+          action: 'update_destination',
+          message: 'There was an issue with the destination wallet. Please verify the address.'
+        };
+      
+      case 'returned':
+        // Bank returned the funds
+        return {
+          canRecover: true,
+          action: 'retry_deposit',
+          message: 'Your bank deposit was returned. Please check account details and try again.'
+        };
+      
+      case 'error':
+        // Processing error
+        return {
+          canRecover: true,
+          action: 'create_new_transfer',
+          message: 'There was a processing error. We\'ll create a new transfer for you.'
+        };
+      
+      default:
+        return {
+          canRecover: false,
+          action: 'contact_support',
+          message: 'Please contact our support team for assistance.'
+        };
+    }
+  }
+}
+```
+
+## Testing Your Onramp Flow
+
+### End-to-End Testing
+
+```javascript
+describe('Onramp Flow', () => {
+  test('complete transfer-based onramp', async () => {
+    const customerData = generateTestCustomerData();
+    const amount = '100.00';
+    
+    // Test complete flow
+    const result = await completeOnrampFlow(customerData, amount);
+    
+    expect(result.customerId).toBeDefined();
+    expect(result.walletAddress).toBeDefined();
+    expect(result.transferId).toBeDefined();
+    expect(result.depositInstructions).toBeDefined();
+    
+    // Verify deposit instructions are complete
+    expect(result.depositInstructions.bank_routing_number).toBeDefined();
+    expect(result.depositInstructions.bank_account_number).toBeDefined();
+  });
+  
+  test('virtual account onramp setup', async () => {
+    const customerData = generateTestCustomerData();
+    
+    const result = await createVirtualAccountOnramp(customerData);
+    
+    expect(result.virtualAccountId).toBeDefined();
+    expect(result.bankingDetails.payment_rails).toContain('ach');
+  });
+  
+  test('error handling for KYC failure', async () => {
+    const invalidCustomerData = {
+      ...generateTestCustomerData(),
+      birth_date: '2010-01-01' // Too young
+    };
+    
+    await expect(completeOnrampFlow(invalidCustomerData, '100.00'))
+      .rejects.toThrow('Customer must be at least 18 years old');
+  });
+});
+```
+
+## Production Considerations
+
+### Scaling
+- Implement proper database indexes for customer and transfer lookups
+- Use background job processing for long-running operations
+- Cache frequently accessed data (exchange rates, fee structures)
+- Implement proper rate limiting and request throttling
+
+### Security
+- Never store sensitive customer data in plain text
+- Implement proper session management
+- Use HTTPS for all API communications
+- Validate all user inputs thoroughly
+
+### Compliance
+- Maintain detailed audit logs for all onramp activities
+- Implement proper KYC document retention policies
+- Report large transactions as required by regulations
+- Monitor for suspicious activity patterns
+
+### Monitoring
+- Track onramp conversion rates and abandonment points
+- Monitor average processing times for each step
+- Set up alerts for failed verifications or transfers
+- Measure customer satisfaction throughout the flow
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Offramp Flow" href="/guides/offramp-flow">
+    Learn how to build crypto-to-fiat withdrawal experiences
+  </Card>
+  <Card title="Virtual Accounts" href="/concepts/virtual-accounts">
+    Deep dive into virtual account functionality
+  </Card>
+  <Card title="Transfers" href="/concepts/transfers">
+    Understand transfer mechanics and monitoring
+  </Card>
+  <Card title="API Reference" href="/api-reference/authentication">
+    Complete API documentation
+  </Card>
+</CardGroup>
