@@ -81,5 +81,10 @@
      "vscode"
    ]
   },
-  "footer": {}
+  "footer": {},
+  "api": {
+    "playground": {
+      "display": "simple"
+    }
+  }
 }
