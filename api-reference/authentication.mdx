@@ -45,7 +45,19 @@ The Omniwire API requires three main headers for authentication and request mana
 
 ## Environment Setup
 
-### Development Environment
+<Warning>
+**Sandbox Rate Limits & Restrictions**
+
+Sandbox environment has **arbitrary rate limits** and requests may be dropped at any time. Additionally:
+- **Use for API schema testing only** - not for functional testing
+- No webhooks are fired in Sandbox
+- All financial operations use dummy data
+- No real blockchain or banking connections
+
+**Recommendation**: Use Sandbox for API integration testing, then switch to Production for all functional testing.
+</Warning>
+
+### Development Environment (Sandbox)
 
 For development and testing:
 

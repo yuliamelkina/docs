@@ -3,6 +3,18 @@ title: 'Transfers'
 description: 'Move money between different payment rails and currencies'
 ---
 
+<Warning>
+**Sandbox Limitations**
+
+- **No Real Money Movement**: Transfers use dummy data and simulate fund movement
+- **No Testnet Support**: Blockchain transactions are not actually executed
+- **Dummy Data**: Transaction hashes, amounts, and receipts are placeholder values
+- **No Webhooks**: Transfer status updates are not sent in Sandbox
+- **No Plaid Integration**: Bank connections and validations don't work
+
+Use Production for testing actual fund transfers and blockchain interactions.
+</Warning>
+
 ## Overview
 
 Transfers are the core mechanism for moving money in Omniwire. They can move funds between traditional banking systems (ACH, Wire, SEPA) and blockchain networks (Solana, Ethereum, etc.), handling currency conversion and routing automatically.

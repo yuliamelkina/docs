@@ -3,6 +3,15 @@ title: 'Customers'
 description: 'Understanding customer management and KYC in Omniwire'
 ---
 
+<Warning>
+**Sandbox vs Production KYC Differences**
+
+- **Sandbox**: Customers are automatically approved with no real KYC/KYB flow. Signed agreement IDs can be arbitrary. Each user gets their own isolated Developer Account scope.
+- **Production**: Full KYC verification required with document validation, identity checks, and compliance screening. Signed agreement IDs must be legitimate from ToS acceptance flow.
+
+Use Sandbox only to test API request/response schemas. Use Production for real KYC testing.
+</Warning>
+
 ## Overview
 
 Customers are the foundation of Omniwire. Every action in the platform - from creating wallets to executing transfers - is performed on behalf of a customer. This page covers customer lifecycle, KYC requirements, and compliance management.
