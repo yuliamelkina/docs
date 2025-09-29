@@ -1,0 +1,478 @@
+---
+title: 'Liquidation Addresses'
+description: 'Permanent crypto addresses that automatically convert and forward funds'
+---
+
+## Overview
+
+A **liquidation address** is a permanent payment route that connects a blockchain address to either a fiat bank account or another cryptocurrency address. When customers send crypto (such as USDC) to their liquidation address, Omniwire automatically converts and forwards the funds to the specified destination.
+
+Liquidation addresses provide a simple way for customers to:
+- **Convert crypto to fiat**: Send USDC → receive USD in their bank account
+- **Bridge between chains**: Send ETH USDC → receive Solana USDC  
+- **Automate offramp flows**: Set up permanent crypto-to-cash conversion routes
+
+
+## How Liquidation Addresses Work
+
+<Steps>
+  <Step title="Address Generation">
+    Create a permanent blockchain address tied to customer's conversion preferences
+  </Step>
+  <Step title="Crypto Deposit">
+    Customer sends supported cryptocurrency to their liquidation address
+  </Step>
+  <Step title="Automatic Processing">
+    Funds are automatically converted according to the liquidation address configuration
+  </Step>
+  <Step title="Destination Delivery">
+    Converted funds are sent to the specified bank account or crypto address
+  </Step>
+</Steps>
+
+## Supported Configurations
+
+### Multichain Support
+
+Create flexible liquidation addresses that accept deposits across multiple blockchain networks:
+
+<Card title="EVM Multichain" icon="link">
+  Use `chain: "evm"` to accept deposits from Ethereum, Polygon, Base, and other EVM networks at the same address
+</Card>
+
+### Multicurrency Support  
+
+Accept multiple cryptocurrencies at a single liquidation address:
+
+<Card title="Any Currency" icon="coins">
+  Use `currency: "any"` to accept USDC, USDT, DAI and other supported tokens at the same address
+</Card>
+
+### Combined Flexibility
+
+Create liquidation addresses with both multichain and multicurrency support:
+
+```json
+{
+  "chain": "evm",        // Accept from any EVM chain
+  "currency": "any",     // Accept any supported currency
+  "destination_payment_rail": "wire",
+  "destination_currency": "usd",
+  "external_account_id": "ext_123"
+}
+```
+
+## Creating Liquidation Addresses
+
+### Crypto to Fiat (Bank Account)
+
+Convert incoming cryptocurrency to fiat and send to a bank account:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/liquidation_addresses \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chain": "ethereum",
+    "currency": "usdc",
+    "destination_payment_rail": "wire",
+    "destination_currency": "usd",
+    "external_account_id": "ext_alice_bank_123",
+    "custom_developer_fee_percent": "0.25"
+  }'
+```
+
+```javascript Node.js
+const liquidationAddress = await fetch(`http://localhost:3000/customers/${customerId}/liquidation_addresses`, {
+  method: 'POST',
+  headers: {
+    'Api-Key': 'test-api-key',
+    'Tenant-Id': 'your-tenant-uuid',
+    'Idempotency-Key': crypto.randomUUID(),
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    chain: 'ethereum',
+    currency: 'usdc',
+    destination_payment_rail: 'wire',
+    destination_currency: 'usd',
+    external_account_id: 'ext_alice_bank_123',
+    custom_developer_fee_percent: '0.25'
+  })
+});
+
+const address = await liquidationAddress.json();
+console.log('Liquidation address created:', address.address);
+```
+
+```python Python
+import requests
+import uuid
+
+response = requests.post(
+    f'http://localhost:3000/customers/{customer_id}/liquidation_addresses',
+    headers={
+        'Api-Key': 'test-api-key',
+        'Tenant-Id': 'your-tenant-uuid',
+        'Idempotency-Key': str(uuid.uuid4()),
+        'Content-Type': 'application/json'
+    },
+    json={
+        'chain': 'ethereum',
+        'currency': 'usdc',
+        'destination_payment_rail': 'wire',
+        'destination_currency': 'usd',
+        'external_account_id': 'ext_alice_bank_123',
+        'custom_developer_fee_percent': '0.25'
+    }
+)
+
+address = response.json()
+print(f'Liquidation address: {address["address"]}')
+```
+
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "id": "liq_1234567890abcdef",
+  "chain": "ethereum",
+  "currency": "usdc",
+  "address": "0x742d35Cc0C152dC4C1f4b2A3f5a8f4f5d3e8D2F1",
+  "external_account_id": "ext_alice_bank_123",
+  "destination_payment_rail": "wire",
+  "destination_currency": "usd",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+```
+
+Now whenever a customer sends USDC to `0x742d35Cc...`, it will automatically be converted to USD and sent via wire transfer to their bank account.
+
+### Crypto to Crypto (Cross-Chain)
+
+Create liquidation addresses that forward crypto to other blockchain networks:
+
+```bash
+curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/liquidation_addresses \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chain": "ethereum",
+    "currency": "usdt", 
+    "destination_payment_rail": "solana",
+    "destination_currency": "usdc",
+    "destination_address": "SolanaDestination111111111111111111111111111"
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "liq_cross_chain_456",
+  "chain": "ethereum", 
+  "currency": "usdt",
+  "address": "0x891c4A5b8C9d3e2f1a6b5c4d7e8f9a0b1c2d3e4f",
+  "destination_payment_rail": "solana",
+  "destination_currency": "usdc",
+  "destination_address": "SolanaDestination111111111111111111111111111",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+```
+
+This liquidation address accepts Ethereum USDT and automatically forwards it as Solana USDC.
+
+### Multichain Examples
+
+**EVM Multichain (Accept from any EVM network):**
+```json
+{
+  "chain": "evm",
+  "currency": "usdc",
+  "destination_payment_rail": "wire",
+  "destination_currency": "usd",
+  "external_account_id": "ext_123"
+}
+```
+
+**Multicurrency (Accept any supported token):**
+```json
+{
+  "chain": "base",
+  "currency": "any", 
+  "destination_payment_rail": "wire",
+  "destination_currency": "usd",
+  "external_account_id": "ext_123"
+}
+```
+
+**Combined Flexibility:**
+```json
+{
+  "chain": "evm",
+  "currency": "any",
+  "destination_payment_rail": "solana",
+  "destination_currency": "usdc",
+  "destination_address": "SolanaDest111111111111111111111111111"
+}
+```
+
+## Memo-Based Blockchains
+
+<Warning>
+**Don't forget the blockchain memo**: For memo-based blockchains like Stellar, always include the provided memo in deposits.
+</Warning>
+
+For memo-based blockchains such as Stellar and Tron, the API response includes a `blockchain_memo` that must be included when sending funds:
+
+```json
+{
+  "id": "liq_stellar_123",
+  "chain": "stellar",
+  "currency": "usdc",
+  "address": "GDUY7STELLARLIQUIDATIONADDRESS12345678901234",
+  "blockchain_memo": "12345",
+  "external_account_id": "ext_123",
+  "destination_payment_rail": "wire",
+  "destination_currency": "usd",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+```
+
+**Important**: Customers must include `blockchain_memo: "12345"` when sending USDC to this Stellar address, otherwise the deposit cannot be processed.
+
+## Custom Developer Fees
+
+Override default fees by setting a custom developer fee percentage:
+
+```json
+{
+  "chain": "ethereum",
+  "currency": "usdc",
+  "destination_payment_rail": "wire",
+  "destination_currency": "usd",
+  "external_account_id": "ext_123",
+  "custom_developer_fee_percent": "0.5"
+}
+```
+
+**Fee Notes:**
+- Expressed as percentage (e.g., `"0.5"` = 0.5%)
+- Applied to the deposit amount before conversion
+- Overrides any global developer fee settings
+- Minimum and maximum fee limits may apply
+
+## Managing Liquidation Addresses
+
+### List Customer Liquidation Addresses
+
+```bash
+curl -X GET http://localhost:3000/customers/cust_1234567890abcdef/liquidation_addresses \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+### Get Specific Liquidation Address
+
+```bash  
+curl -X GET http://localhost:3000/customers/cust_1234567890abcdef/liquidation_addresses/liq_1234567890abcdef \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+### View Drain History
+
+See all processed deposits (drains) for a liquidation address:
+
+```bash
+curl -X GET http://localhost:3000/customers/cust_1234567890abcdef/liquidation_addresses/liq_1234567890abcdef/drains \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid"
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "drain_123",
+    "amount": "100.50",
+    "currency": "usdc",
+    "state": "payment_processed",
+    "created_at": "2024-01-15T10:30:00Z",
+    "deposit_tx_hash": "0xabc123...",
+    "destination_tx_hash": "wire_ref_456",
+    "destination": {
+      "payment_rail": "wire",
+      "currency": "usd",
+      "external_account_id": "ext_123"
+    }
+  }
+]
+```
+
+## Supported Destinations
+
+### Fiat Destinations
+
+<CardGroup cols={3}>
+  <Card title="Wire Transfers" icon="building-columns">
+    Domestic and international wire transfers to bank accounts
+  </Card>
+  <Card title="ACH Transfers" icon="money-bill-transfer">
+    US ACH transfers for domestic bank accounts
+  </Card>
+  <Card title="SEPA Transfers" icon="euro-sign">
+    European SEPA transfers for EUR bank accounts
+  </Card>
+</CardGroup>
+
+### Crypto Destinations
+
+<CardGroup cols={3}>
+  <Card title="Solana" icon="S">
+    USDC, USDT and other SPL tokens
+  </Card>
+  <Card title="Ethereum" icon="ethereum">
+    USDC, USDT, DAI and other ERC-20 tokens
+  </Card>
+  <Card title="Polygon" icon="triangle">
+    USDC, USDT on Polygon network
+  </Card>
+</CardGroup>
+
+## Integration Patterns
+
+### Automated Offramp Service
+
+Set up liquidation addresses for customers who want to automatically convert crypto holdings to fiat:
+
+```javascript
+async function setupOfframpForCustomer(customerId, bankAccountId) {
+  // Create liquidation address for each supported chain
+  const addresses = await Promise.all([
+    // Ethereum USDC → USD Wire
+    createLiquidationAddress(customerId, {
+      chain: 'ethereum',
+      currency: 'usdc',
+      destination_payment_rail: 'wire',
+      destination_currency: 'usd',
+      external_account_id: bankAccountId
+    }),
+    
+    // Solana USDC → USD Wire  
+    createLiquidationAddress(customerId, {
+      chain: 'solana',
+      currency: 'usdc',
+      destination_payment_rail: 'wire',
+      destination_currency: 'usd',
+      external_account_id: bankAccountId
+    })
+  ]);
+  
+  return {
+    ethereum: addresses[0].address,
+    solana: addresses[1].address
+  };
+}
+```
+
+### Cross-Chain Bridge Service
+
+Create liquidation addresses that automatically bridge assets between networks:
+
+```javascript
+async function createCrossBridge(customerId, fromChain, toChain) {
+  const customerWallet = await getCustomerWallet(customerId, toChain);
+  
+  return await createLiquidationAddress(customerId, {
+    chain: fromChain,
+    currency: 'usdc',
+    destination_payment_rail: toChain,
+    destination_currency: 'usdc',
+    destination_address: customerWallet.address,
+    custom_developer_fee_percent: '0.1' // Lower fee for bridging
+  });
+}
+
+// Usage: Customer sends USDC on Ethereum → automatically receives USDC on Solana
+const ethereumToSolanaBridge = await createCrossBridge(customerId, 'ethereum', 'solana');
+```
+
+### Multi-Asset Treasury Liquidation
+
+Create flexible liquidation addresses that accept multiple assets:
+
+```javascript
+async function setupTreasuryLiquidation(customerId, treasuryBankAccount) {
+  // Accept any supported currency from any EVM chain
+  return await createLiquidationAddress(customerId, {
+    chain: 'evm',           // Any EVM network
+    currency: 'any',        // Any supported currency
+    destination_payment_rail: 'wire',
+    destination_currency: 'usd',
+    external_account_id: treasuryBankAccount,
+    custom_developer_fee_percent: '0.15'
+  });
+}
+```
+
+## Drain Processing States
+
+Liquidation address deposits (drains) go through several processing states:
+
+<CardGroup cols={2}>
+  <Card title="in_review" icon="magnifying-glass">
+    Deposit detected, undergoing compliance screening
+  </Card>
+  <Card title="funds_received" icon="circle-check">
+    Deposit confirmed on blockchain
+  </Card>
+  <Card title="payment_submitted" icon="paper-plane">
+    Conversion completed, payment submitted to destination
+  </Card>
+  <Card title="payment_processed" icon="circle-check">
+    Payment successfully delivered to destination
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+### Address Management
+- **Permanent Addresses**: Liquidation addresses are permanent - customers can reuse them indefinitely
+- **Single Purpose**: Create separate liquidation addresses for different use cases or destinations
+- **Clear Labeling**: Use descriptive names/references to identify different liquidation addresses
+- **Regular Monitoring**: Check drain history to track customer deposit patterns
+
+### Customer Communication  
+- **Clear Instructions**: Provide customers with the exact address and memo (if required)
+- **Supported Assets**: Clearly communicate which cryptocurrencies are accepted
+- **Processing Time**: Set expectations for conversion and delivery timeframes
+- **Fee Transparency**: Explain all fees that will be deducted from deposits
+
+### Security & Compliance
+- **Unsupported Assets**: Warn customers not to send unsupported currencies - these cannot be returned
+- **Memo Requirements**: Emphasize memo requirements for Stellar, Tron, and other memo-based chains
+- **Large Deposits**: Implement monitoring for large deposits that may require additional compliance review
+- **Transaction Records**: Maintain detailed records of all drains for compliance purposes
+
+### Performance Optimization
+- **Multichain Setup**: Use `chain: "evm"` for customers who use multiple EVM networks
+- **Multicurrency Setup**: Use `currency: "any"` for customers with diverse crypto holdings
+- **Fee Strategy**: Adjust developer fees based on deposit volume and customer relationship
+- **Batch Processing**: Consider drain frequency and timing for optimal user experience
+
+## Limitations
+
+<Warning>
+**Unsupported Currency Risk**: Omniwire cannot return unsupported cryptocurrencies sent to liquidation addresses. Ensure customers only send supported assets.
+</Warning>
+
