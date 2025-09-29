@@ -6,7 +6,7 @@ description: 'Understanding customer management and KYC in Omniwire'
 <Warning>
 **Sandbox vs Production KYC Differences**
 
-- **Sandbox**: Customers are automatically approved with no real KYC/KYB flow. Signed agreement IDs can be arbitrary. Each user gets their own isolated Developer Account scope.
+- **Sandbox**: Customers are automatically approved with no real KYC flow. Signed agreement IDs can be arbitrary. Each user gets their own isolated Developer Account scope.
 - **Production**: Full KYC verification required with document validation, identity checks, and compliance screening. Signed agreement IDs must be legitimate from ToS acceptance flow.
 
 Use Sandbox only to test API request/response schemas. Use Production for real KYC testing.
@@ -73,11 +73,6 @@ Omniwire requires properly formatted addresses with ISO codes:
 }
 ```
 
-**Key Requirements:**
-- Use ISO 3166-2 subdivision codes with country prefix (e.g., "US-TX")
-- Street address must be at least 4 characters
-- All fields are required except `street_line_2`
-
 ## Customer Status
 
 Customer status indicates their current verification state and platform access:
@@ -85,7 +80,7 @@ Customer status indicates their current verification state and platform access:
 ### Active Status Values
 
 <CardGroup cols={2}>
-  <Card title="active" icon="check-circle">
+  <Card title="active" icon="circle-check">
     Fully verified, can use all approved features
   </Card>
   <Card title="under_review" icon="clock">
@@ -102,7 +97,7 @@ Customer status indicates their current verification state and platform access:
 ### Restricted Status Values
 
 <CardGroup cols={2}>
-  <Card title="incomplete" icon="exclamation-triangle">
+  <Card title="incomplete" icon="triangle-exclamation">
     Missing required information
   </Card>
   <Card title="not_started" icon="pause">
@@ -111,7 +106,7 @@ Customer status indicates their current verification state and platform access:
   <Card title="paused" icon="hand">
     Verification temporarily halted
   </Card>
-  <Card title="rejected" icon="x-circle">
+  <Card title="rejected" icon="circle-xmark">
     KYC verification failed
   </Card>
 </CardGroup>
@@ -339,65 +334,6 @@ curl -X PUT http://localhost:3000/customers/cust_1234567890abcdef \
 - Anonymize data for analytics
 - Provide data export capabilities
 
-## Integration Patterns
-
-### Customer Onboarding Flow
-
-```javascript
-// 1. Create customer
-const customer = await createCustomer({
-  type: 'individual',
-  first_name: 'John',
-  last_name: 'Doe',
-  // ... other required fields
-});
-
-// 2. Check status and requirements
-const customerStatus = await getCustomer(customer.id);
-console.log('Status:', customerStatus.status);
-console.log('Requirements:', customerStatus.requirements_due);
-
-// 3. Handle requirements fulfillment
-if (customerStatus.requirements_due.includes('identity_verification')) {
-  // Guide user through ID verification
-  await initiateIDVerification(customer.id);
-}
-
-// 4. Wait for approval
-while (customerStatus.status !== 'active') {
-  await delay(5000);
-  customerStatus = await getCustomer(customer.id);
-}
-
-// 5. Customer is ready to use platform
-console.log('Customer activated:', customer.id);
-```
-
-### Status Monitoring
-
-```javascript
-function handleCustomerStatus(customer) {
-  switch (customer.status) {
-    case 'active':
-      enableFullPlatformAccess(customer.id);
-      break;
-    case 'under_review':
-      showReviewMessage(customer.id);
-      break;
-    case 'awaiting_questionnaire':
-      redirectToQuestionnaire(customer.id);
-      break;
-    case 'incomplete':
-      showRequirements(customer.requirements_due);
-      break;
-    case 'rejected':
-      handleRejection(customer.rejection_reasons);
-      break;
-    default:
-      showGenericWaitingMessage();
-  }
-}
-```
 
 ## Best Practices
 
