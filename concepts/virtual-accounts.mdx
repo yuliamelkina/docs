@@ -16,7 +16,11 @@ Use Production for testing actual money movement and conversion flows.
 
 ## Overview
 
-Virtual accounts in Omniwire are unique bank account numbers that customers can use to deposit traditional fiat currencies (USD, EUR) which are then automatically converted to cryptocurrency and delivered to a specified wallet address. They bridge traditional banking and crypto ecosystems seamlessly.
+Virtual accounts in Omniwire are **permanent, reusable fiat deposit addresses** that convert incoming fiat currencies into cryptocurrency and deliver it to your specified destination (such as a wallet address or custodial account). They provide customers with local deposit details including account numbers, routing codes, and IBANs.
+
+<Note>
+**KYC Requirement**: Customers must be fully onboarded and KYC-approved before creating virtual accounts. Virtual accounts cannot be created for customers with pending verification status.
+</Note>
 
 ## How Virtual Accounts Work
 
@@ -198,17 +202,17 @@ For wire transfers, additional details are provided:
 
 ## Supported Conversions
 
-### Source Currencies
+Virtual accounts support multiple regional payment methods, providing customers with local deposit details:
 
 <CardGroup cols={3}>
-  <Card title="USD" icon="dollar-sign">
-    US Dollar via ACH or Wire
+  <Card title="USD Virtual Accounts" icon="dollar-sign">
+    U.S. bank account and routing numbers for ACH or wire transfers - issued in your customer's name
   </Card>
-  <Card title="EUR" icon="euro-sign">
-    Euro via SEPA or Wire  
+  <Card title="SEPA Virtual IBAN" icon="euro-sign">
+    Euro-denominated IBANs for accepting SEPA payments across European Union
   </Card>
-  <Card title="GBP" icon="pound-sign">
-    British Pound via Faster Payments
+  <Card title="MXN Virtual Accounts" icon="peso-sign">
+    CLABE account numbers for receiving SPEI (Mexico) payments
   </Card>
 </CardGroup>
 
@@ -217,22 +221,26 @@ For wire transfers, additional details are provided:
 <Accordion title="Solana Network">
 **Supported Assets**: USDC, USDT
 **Settlement Time**: ~30 seconds after deposit confirmation
-**Gas Fees**: Paid by Omniwire
 **Address Format**: Base58 Solana addresses
 </Accordion>
 
 <Accordion title="Ethereum Network">  
 **Supported Assets**: USDC, USDT, DAI
 **Settlement Time**: 1-5 minutes after deposit confirmation
-**Gas Fees**: Paid by Omniwire
 **Address Format**: 0x hex addresses
 </Accordion>
 
 <Accordion title="Polygon Network">
 **Supported Assets**: USDC, USDT
-**Settlement Time**: ~30 seconds after deposit confirmation
-**Gas Fees**: Paid by Omniwire  
+**Settlement Time**: ~30 seconds after deposit confirmation 
 **Address Format**: 0x hex addresses (same as Ethereum)
+</Accordion>
+
+<Accordion title="Stellar Network">
+**Supported Assets**: USDC, XLMUSD
+**Settlement Time**: ~5 seconds after deposit confirmation
+**Address Format**: Stellar public keys with optional memo support
+**Special Feature**: Supports blockchain memos for transaction identification
 </Accordion>
 
 ## Virtual Account Management
@@ -287,43 +295,11 @@ Response:
 ]
 ```
 
-## Fee Structure
-
-### Developer Fees
-
-Set custom fee percentages on virtual account creation:
-
-```json
-{
-  "developer_fee_percent": "0.5"  // 0.5% fee on all conversions
-}
-```
-
-**Fee Calculation**:
-- Applied to the source deposit amount
-- Deducted before currency conversion
-- Minimum fee may apply based on payment rail
-
-### Network Fees
-
-Omniwire covers blockchain network fees:
-- **Solana**: Transaction fees paid by Omniwire
-- **Ethereum**: Gas fees paid by Omniwire  
-- **Polygon**: MATIC fees paid by Omniwire
-
-### Conversion Fees
-
-Currency conversion includes:
-- **Exchange Rate Spread**: Typically 0.1-0.5%
-- **Processing Fee**: Fixed fee per conversion
-- **Network Settlement**: Blockchain transaction costs
-
-## Virtual Account Status
 
 Virtual accounts can have different operational statuses:
 
 <CardGroup cols={2}>
-  <Card title="active" icon="check-circle">
+  <Card title="active" icon="circle-check">
     Ready to receive deposits and process conversions
   </Card>
   <Card title="pending" icon="clock">
@@ -332,7 +308,7 @@ Virtual accounts can have different operational statuses:
   <Card title="suspended" icon="pause">
     Temporarily disabled, deposits will be held
   </Card>
-  <Card title="closed" icon="x-circle">
+  <Card title="closed" icon="circle-xmark">
     Permanently closed, no longer accepting deposits
   </Card>
 </CardGroup>
@@ -464,40 +440,32 @@ async function monitorVirtualAccountActivity(customerId) {
 ## Best Practices
 
 ### Account Creation
-- Create virtual accounts only when needed
-- Use appropriate destination addresses (preferably custodial wallets)
-- Set reasonable developer fee percentages (0.1% - 1.0%)
-- Consider customer's expected deposit volumes
+- **Permanent Setup**: Virtual accounts are permanent and reusable - create them once per customer/destination pair
+- **KYC First**: Ensure customers are fully KYC-approved before creating virtual accounts
+- **Strategic Destinations**: Use appropriate destination addresses (preferably custodial wallets for better control)
+- **Fee Optimization**: Set reasonable developer fee percentages (0.1% - 1.0%) based on your business model
+- **Volume Planning**: Consider customer's expected deposit volumes when choosing networks
 
 ### Customer Communication
-- Provide clear deposit instructions to customers
-- Explain conversion process and timeline
-- Share fee structure transparently
-- Send notifications for successful conversions
+- **Clear Instructions**: Provide complete, easy-to-understand deposit instructions including all required reference numbers
+- **Process Transparency**: Explain the conversion process, timeline, and any fees involved
+- **Permanent Nature**: Emphasize that customers can reuse the same banking details for future deposits
+- **Real-time Updates**: Send notifications for successful conversions with transaction hashes
 
 ### Security & Compliance
-- Monitor for unusual deposit patterns
-- Implement deposit limits based on customer verification level
-- Maintain detailed records of all conversions
-- Report large transactions as required by regulations
+- **Pattern Monitoring**: Monitor for unusual deposit patterns or suspicious activity
+- **Tiered Limits**: Implement deposit limits based on customer verification level and regulatory requirements
+- **Detailed Records**: Maintain comprehensive records of all conversions for compliance and audit purposes
+- **Regulatory Reporting**: Report large transactions as required by local regulations and AML policies
 
 ### User Experience
-- Display virtual account details prominently in your UI
-- Provide QR codes for easy sharing of deposit instructions
-- Show conversion rates and fees before customers deposit
-- Track and display deposit/conversion history
+- **Prominent Display**: Show virtual account details prominently in your UI with copy-paste functionality
+- **QR Code Sharing**: Provide QR codes containing deposit instructions for easy mobile sharing
+- **Rate Transparency**: Display current conversion rates and fees before customers initiate deposits
+- **Activity Tracking**: Provide detailed deposit and conversion history with transaction statuses
+- **Multi-Account Strategy**: Consider creating different virtual accounts for different use cases (small vs large amounts)
 
 ## Limitations
-
-### Deposit Minimums
-- ACH: Minimum $10 deposit
-- Wire: Minimum $100 deposit  
-- SEPA: Minimum €10 deposit
-
-### Processing Times
-- **ACH**: 1-3 business days to receive, immediate conversion
-- **Wire**: Same day to receive, immediate conversion
-- **SEPA**: Same business day, immediate conversion
 
 ### Currency Restrictions
 - Only supported source currencies can be accepted
