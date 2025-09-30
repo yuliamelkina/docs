@@ -19,7 +19,7 @@ Before you begin, make sure you have:
 First, verify you can connect to the API:
 
 ```bash
-curl -X GET http://localhost:3000/ \
+curl -X GET http://localhost:3000/ping \
   -H "Api-Key: test-api-key" \
   -H "Content-Type: application/json"
 ```
@@ -226,17 +226,6 @@ Now that you've created your first customer and wallet, you can:
 </CardGroup>
 
 ## Development Tips
-
-### Use Mock Data
-For faster development, you can use the mock customer creation endpoint:
-
-```bash
-curl -X POST http://localhost:3000/customers/mock-create \
-  -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid"
-```
-
-This creates a customer with randomly generated but valid data.
 
 ### Idempotency Keys
 Always use idempotency keys for create operations in production:

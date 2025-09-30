@@ -33,6 +33,7 @@
             "pages": [
               "concepts/customers",
               "concepts/wallets",
+              "concepts/external-accounts",
               "concepts/virtual-accounts",
               "concepts/liquidation-addresses",
               "concepts/transfers"

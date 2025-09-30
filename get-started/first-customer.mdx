@@ -303,19 +303,6 @@ curl -X PUT http://localhost:3000/customers/cust_alice_j_1234567890 \
 
 ## Development & Testing
 
-### Mock Customer Creation
-
-For development, use the mock endpoint to create customers with generated data:
-
-```bash
-curl -X POST http://localhost:3000/customers/mock-create \
-  -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
-  -H "Idempotency-Key: $(uuidgen)"
-```
-
-This creates a customer with realistic but fake data for testing purposes.
-
 ### Listing Customers
 
 View all customers in your tenant:
@@ -359,26 +346,6 @@ curl -X GET http://localhost:3000/customers \
 }
 ```
 </Accordion>
-
-## Best Practices
-
-### Data Validation
-- Always validate email addresses before submission
-- Ensure birth dates indicate customers are 18+ years old
-- Use correct ISO country and subdivision codes
-- Verify SSN format for US customers
-
-### Security
-- Never log or store sensitive identifying information
-- Use HTTPS in production environments
-- Implement proper error handling for PII
-- Consider data retention and deletion policies
-
-### User Experience
-- Collect Terms of Service acceptance before API calls
-- Provide clear messaging about verification requirements
-- Show progress indicators for endorsement status
-- Handle pending and review states gracefully
 
 ## Next Steps
 

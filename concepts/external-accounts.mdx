@@ -1,0 +1,105 @@
+---
+title: 'External Accounts'
+description: 'Bank accounts for fiat withdrawals and offramp destinations'
+---
+
+## Overview
+
+External accounts represent your customers' financial accounts (bank accounts, payment accounts) that can be used as destinations for fiat withdrawals.
+
+
+## How External Accounts Work
+
+<Steps>
+  <Step title="Account Registration">
+    Customer provides bank account details
+  </Step>
+  <Step title="Validation & Verification">
+    Omniwire validates account information and performs compliance screening
+  </Step>
+  <Step title="Account Approval">
+    Approved accounts become available for withdrawal
+  </Step>
+</Steps>
+
+## Supported Account Types
+
+### US Bank Accounts
+
+US customers can add checking and savings accounts using routing and account numbers:
+
+**Required Information:**
+- Bank name and account name
+- Account holder's full name and address
+- Routing number (9 digits)
+- Account number
+- Account type (checking or savings)
+
+### Mexican Accounts (MXN)
+
+Mexican customers can add Peso-denominated accounts:
+
+**Required Information:**
+- Bank name and account details
+- Account holder information  
+- Mexican address verification
+
+
+## Account Information Security
+
+### Sensitive Data Handling
+
+Omniwire implements strict security measures for financial account information:
+
+- **Full Account Numbers**: Never returned in API responses - only last 4 digits shown
+- **Encryption**: All account details encrypted at rest and in transit
+- **Access Control**: Account details only accessible to authorized customer and tenant
+- **Audit Logging**: All account access and modifications logged for compliance
+
+
+## Compliance & Security Features
+
+### Automatic Compliance Screening
+
+All external accounts undergo comprehensive compliance screening:
+
+- **OFAC Sanctions Screening**: Account holders checked against sanctions lists
+- **AML Risk Assessment**: Account patterns analyzed for money laundering risk
+- **PEP (Politically Exposed Person) Screening**: Enhanced due diligence for high-risk individuals
+- **Bank Validation**: Institution verification and regulatory status checking
+
+### Data Protection
+
+Omniwire implements bank-grade security for external account data:
+
+- **End-to-End Encryption**: Account details encrypted throughout the entire system
+- **Zero-Knowledge Architecture**: Full account numbers never logged or cached
+- **Secure Access Controls**: Role-based permissions for account access
+- **Regular Security Audits**: Continuous monitoring and penetration testing
+
+### Regulatory Compliance
+
+External account management meets strict regulatory requirements:
+
+- **PCI DSS Compliance**: Payment card industry data security standards
+- **SOC 2 Type II**: System and organization controls audit certification  
+- **GDPR Compliance**: European data protection regulation adherence
+- **Bank Secrecy Act**: US anti-money laundering regulation compliance
+
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Liquidation Addresses" href="/concepts/liquidation-addresses">
+    Use external accounts as payout destinations for crypto liquidation
+  </Card>
+  <Card title="Transfers" href="/concepts/transfers">
+    Create transfers that send funds to external bank accounts
+  </Card>
+  <Card title="Offramp Guide" href="/guides/offramp-flow">
+    Build complete crypto-to-fiat withdrawal experiences
+  </Card>
+  <Card title="API Reference" href="/api-reference/authentication">
+    Complete documentation for external accounts API endpoints
+  </Card>
+</CardGroup>
