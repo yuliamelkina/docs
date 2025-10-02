@@ -36,7 +36,13 @@
               "concepts/external-accounts",
               "concepts/virtual-accounts",
               "concepts/liquidation-addresses",
-              "concepts/transfers"
+              {
+                "group": "Transfers",
+                "pages": [
+                "concepts/transfers",
+                "concepts/transfer-features"
+                ]
+              }
             ]
           },
           {

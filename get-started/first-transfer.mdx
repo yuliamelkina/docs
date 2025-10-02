@@ -45,7 +45,7 @@ Before creating transfers, you'll need:
 - For crypto destinations: a custodial wallet
 - For fiat destinations: an external bank account
 
-## Transfer Types
+## Transfer Examples
 
 ### 1. ACH Onramp to Solana
 
@@ -73,35 +73,6 @@ curl -X POST http://localhost:3000/transfers \
       "wallet_id": "wallet_abcdef1234567890"
     }
   }'
-```
-
-```javascript Node.js
-const transfer = await fetch('http://localhost:3000/transfers', {
-  method: 'POST',
-  headers: {
-    'Api-Key': 'test-api-key',
-    'Tenant-Id': 'your-tenant-uuid',
-    'Idempotency-Key': crypto.randomUUID(),
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    amount: '75.0',
-    on_behalf_of: 'cust_1234567890abcdef',
-    source: {
-      payment_rail: 'ach_push',
-      currency: 'usd'
-    },
-    destination: {
-      payment_rail: 'solana',
-      currency: 'usdc',
-      to_address: 'SolanaDest111111111111111111111111111',
-      wallet_id: 'wallet_abcdef1234567890'
-    }
-  })
-});
-
-const transferData = await transfer.json();
-console.log('Transfer created:', transferData.id);
 ```
 
 </CodeGroup>
@@ -425,28 +396,6 @@ Add memos for blockchain transfers:
 }
 ```
 </Accordion>
-
-## Best Practices
-
-### Amount Handling
-- Use string values for amounts to avoid floating-point precision issues
-- Include appropriate decimal places for the currency
-- Consider minimum and maximum transfer limits
-
-### Customer Verification
-- Always verify customer status is `active` before creating transfers
-- Check that required endorsements are `approved`
-- Validate external account ownership
-
-### Error Recovery
-- Implement retry logic for transient failures
-- Handle state transitions gracefully
-- Provide clear user messaging for different error conditions
-
-### Compliance
-- Store transfer purposes and references for audit trails
-- Implement appropriate KYC/AML checks based on amounts
-- Consider regulatory requirements for different payment rails
 
 ## Next Steps
 

@@ -1,0 +1,167 @@
+---
+title: 'Transfer Features'
+---
+
+## Overview
+
+Transfer features provide additional flexibility and control over how transfers are processed. These features can be combined to create sophisticated payment flows.
+
+## Flexible Amounts
+
+<Tip>
+**Strongly Recommended**: Use flexible amounts to avoid payment validation failures when the exact deposit amount cannot be predicted.
+</Tip>
+
+The `flexible_amount` feature allows you to create transfers that will match any funds sent using the source deposit instructions, regardless of the exact amount.
+
+**Important Notes:**
+- Flexible amount transfers only support percentage-based `developer_fee_percent` 
+- Fixed `developer_fee` amounts cannot be used with flexible amounts
+- The transfer amount will be populated after funds are received and matched
+
+**Example with Flexible Amount:**
+```bash
+curl -X POST http://localhost:3000/transfers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "on_behalf_of": "cust_1234567890abcdef",
+    "source": {
+      "payment_rail": "wire",
+      "currency": "usd"
+    },
+    "destination": {
+      "payment_rail": "ethereum",
+      "currency": "usdc",
+      "to_address": "0xb794f5ea0ba39494ce839613fffba74279579268"
+    },
+    "developer_fee_percent": "1.0",
+    "features": {
+      "flexible_amount": true
+    }
+  }'
+```
+
+**Response (before funds received):**
+```json
+{
+  "id": "txfr_flexible_123",
+  "state": "awaiting_funds",
+  "on_behalf_of": "cust_1234567890abcdef",
+  "source": {
+    "payment_rail": "wire",
+    "currency": "usd"
+  },
+  "destination": {
+    "payment_rail": "ethereum",
+    "currency": "usdc",
+    "to_address": "0xb794f5ea0ba39494ce839613fffba74279579268"
+  },
+  "features": {
+    "flexible_amount": true
+  },
+  "source_deposit_instructions": {
+    "payment_rail": "wire",
+    "currency": "usd",
+    "bank_name": "Lead Bank",
+    "bank_address": "123 Banking Street, New York, NY 10001",
+    "bank_routing_number": "101019644",
+    "bank_account_number": "9876543210987654",
+    "bank_beneficiary_name": "Omniwire Holdings LLC",
+    "deposit_message": "Transfer ID: txfr_flexible_123"
+  },
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+```
+
+**After funds are received and matched:**
+```json
+{
+  "id": "txfr_flexible_123",
+  "amount": "1337.50",
+  "state": "funds_received",
+  // ... rest of transfer details
+}
+```
+
+## Allow Any From Address
+
+<Tip>
+**Strongly Recommended**: Use this feature for crypto deposits, especially when customers may send funds from exchanges where they cannot control the sending address.
+</Tip>
+
+The `allow_any_from_address` feature removes the requirement to specify the exact sending address for crypto transfers. This is essential when:
+
+- **Exchange Withdrawals**: Customers withdraw from centralized exchanges
+- **Shared Wallets**: Multiple users share the same source wallet
+- **Unknown Origins**: The sending address cannot be determined beforehand
+- **Consumer Flexibility**: Providing maximum flexibility for crypto deposits
+
+**Default Behavior:**
+By default, Omniwire requires the sending address (`from_address`) to be specified when creating transfers involving cryptocurrency sources. This provides security and traceability but can be restrictive.
+
+**With Allow Any From Address:**
+When this feature is enabled, no `from_address` needs to be specified, and any funds sent to the source deposit instructions will be matched regardless of origin.
+
+**Example:**
+```bash
+curl -X POST http://localhost:3000/transfers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "500.0",
+    "on_behalf_of": "cust_1234567890abcdef",
+    "source": {
+      "payment_rail": "ethereum",
+      "currency": "usdc"
+    },
+    "destination": {
+      "payment_rail": "wire",
+      "currency": "usd",
+      "external_account_id": "ext_bank_123456789"
+    },
+    "features": {
+      "allow_any_from_address": true
+    }
+  }'
+```
+
+## Combining Features
+
+Features can be combined for maximum flexibility:
+
+```bash
+curl -X POST http://localhost:3000/transfers \
+  -H "Api-Key: test-api-key" \
+  -H "Tenant-Id: your-tenant-uuid" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "on_behalf_of": "cust_1234567890abcdef",
+    "source": {
+      "payment_rail": "ethereum",
+      "currency": "usdc"
+    },
+    "destination": {
+      "payment_rail": "solana",
+      "currency": "usdc",
+      "to_address": "SolanaDest111111111111111111111111111"
+    },
+    "developer_fee_percent": "0.5",
+    "features": {
+      "flexible_amount": true,
+      "allow_any_from_address": true
+    }
+  }'
+```
+
+This creates a transfer that:
+- Accepts any amount of USDC from any Ethereum address
+- Converts it to Solana USDC at the specified address
+- Applies a 0.5% developer fee
+
