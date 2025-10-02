@@ -172,6 +172,15 @@
               "schema": {
                 "type": "string"
               }
+            },
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
             }
           ],
           "requestBody": {
@@ -234,6 +243,15 @@
                 "type": "integer",
                 "description": "Number of items to return."
               }
+            },
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
             }
           ],
           "responses": {
@@ -258,6 +276,15 @@
         "get": {
           "operationId": "WalletsController_getWallet",
           "parameters": [
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
+            },
             {
               "name": "walletId",
               "required": true,
@@ -295,6 +322,15 @@
               "required": true,
               "in": "header",
               "description": "UUID for request idempotency (auto-generated in development if not provided)",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
               "schema": {
                 "type": "string"
               }
@@ -346,6 +382,15 @@
         "get": {
           "operationId": "VirtualAccountsController_list",
           "parameters": [
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
+            },
             {
               "name": "starting_after",
               "required": false,
@@ -401,6 +446,15 @@
         "get": {
           "operationId": "VirtualAccountsController_get",
           "parameters": [
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
+            },
             {
               "name": "virtualAccountId",
               "required": true,
@@ -661,6 +715,15 @@
               "schema": {
                 "type": "string"
               }
+            },
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
             }
           ],
           "requestBody": {
@@ -750,6 +813,15 @@
           "operationId": "LiquidationAddressesController_list",
           "parameters": [
             {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
               "name": "starting_after",
               "required": false,
               "in": "query",
@@ -804,6 +876,15 @@
         "get": {
           "operationId": "LiquidationAddressesController_listDrains",
           "parameters": [
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
+            },
             {
               "name": "liquidationAddressId",
               "required": true,
@@ -869,6 +950,15 @@
           "operationId": "LiquidationAddressesController_get",
           "parameters": [
             {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
               "name": "liquidationAddressId",
               "required": true,
               "in": "path",
@@ -905,6 +995,15 @@
               "required": true,
               "in": "header",
               "description": "UUID for request idempotency (auto-generated in development if not provided)",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
               "schema": {
                 "type": "string"
               }
@@ -968,6 +1067,15 @@
           "operationId": "ExternalAccountsController_list",
           "parameters": [
             {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
               "name": "starting_after",
               "required": false,
               "in": "query",
@@ -1020,6 +1128,15 @@
           "operationId": "ExternalAccountsController_get",
           "parameters": [
             {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
               "name": "externalAccountId",
               "required": true,
               "in": "path",
@@ -1049,6 +1166,15 @@
         "delete": {
           "operationId": "ExternalAccountsController_delete",
           "parameters": [
+            {
+              "name": "customerId",
+              "required": true,
+              "in": "path",
+              "description": "Customer ID",
+              "schema": {
+                "type": "string"
+              }
+            },
             {
               "name": "externalAccountId",
               "required": true,
