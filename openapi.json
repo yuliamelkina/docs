@@ -1,786 +1,766 @@
 {
-    "openapi": "3.0.0",
-    "paths": {
-      "/customers": {
-        "post": {
-          "operationId": "CustomersController_create",
-          "parameters": [
-            {
-              "name": "idempotency-key",
-              "required": true,
-              "in": "header",
-              "description": "UUID for request idempotency (auto-generated in development if not provided)",
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "requestBody": {
+  "openapi": "3.0.0",
+  "paths": {
+    "/customers": {
+      "post": {
+        "operationId": "CustomersController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
             "required": true,
-            "description": "Customer object to be created (individual only)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CustomerCreateRequest"
-                },
-                "examples": {
-                  "individual": {
-                    "value": {
-                      "type": "individual",
-                      "first_name": "John",
-                      "last_name": "Doe",
-                      "email": "john.doe@example.com",
-                      "birth_date": "1990-01-01",
-                      "residential_address": {
-                        "street_line_1": "123 Main Street",
-                        "city": "Portland",
-                        "subdivision": "US-ME",
-                        "postal_code": "04101",
-                        "country": "USA"
-                      },
-                      "identifying_information": [
-                        {
-                          "type": "ssn",
-                          "issuing_country": "USA",
-                          "number": "123-45-6789"
-                        }
-                      ],
-                      "endorsements": [
-                        "base"
-                      ],
-                      "signed_agreement_id": "agr_test_abc123xyz"
-                    }
-                  }
-                }
-              }
+            "in": "header",
+            "description": "UUID for request idempotency (auto-generated in development if not provided)",
+            "schema": {
+              "type": "string"
             }
-          },
-          "responses": {
-            "201": {
-              "description": "Customer object created",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/CustomerResponseDto"
-                  }
-                }
-              }
-            },
-            "400": {
-              "description": "Validation error."
-            },
-            "409": {
-              "description": "Idempotency key conflict."
-            }
-          },
-          "summary": "Create a new customer",
-          "tags": [
-            "Customers"
-          ]
-        }
-      },
-      "/customers/{customerId}": {
-        "put": {
-          "operationId": "CustomersController_update",
-          "parameters": [
-            {
-              "name": "idempotency-key",
-              "required": true,
-              "in": "header",
-              "description": "UUID for request idempotency (auto-generated in development if not provided)",
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Customer object to be created (individual only)",
+          "content": {
+            "application/json": {
               "schema": {
                 "type": "string"
-              }
-            },
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "requestBody": {
-            "required": true,
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateCustomerClientDto"
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Customer object updated",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/CustomerResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Update customer",
-          "tags": [
-            "Customers"
-          ]
-        },
-        "get": {
-          "operationId": "CustomersController_findOne",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Get customer",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/CustomerResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Get customer and check KYC status",
-          "tags": [
-            "Customers"
-          ]
-        }
-      },
-      "/customers/{customerId}/wallets": {
-        "post": {
-          "operationId": "WalletsController_create",
-          "parameters": [
-            {
-              "name": "idempotency-key",
-              "required": true,
-              "in": "header",
-              "description": "UUID for request idempotency (auto-generated in development if not provided)",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "requestBody": {
-            "required": true,
-            "content": {
-              "application/json": {
-                "schema": {
-                  "example": {
-                    "chain": "solana"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "201": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/WalletResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Create a new custodial wallet for a customer",
-          "tags": [
-            "Wallets"
-          ]
-        },
-        "get": {
-          "operationId": "WalletsController_listForCustomer",
-          "parameters": [
-            {
-              "name": "starting_after",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A wallet ID. If provided, returns the next page starting after this wallet in the timeline (which is ordered newest → oldest). Implies that wallets older than the specified ID will be returned. Mutually exclusive with ending_before."
-              }
-            },
-            {
-              "name": "ending_before",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A wallet ID. If provided, returns the previous page ending before this wallet in the timeline (newest → oldest). Implies that wallets newer than the specified ID will be returned. Mutually exclusive with starting_after."
-              }
-            },
-            {
-              "name": "limit",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "minimum": 1,
-                "maximum": 100,
-                "type": "integer",
-                "description": "Number of items to return."
-              }
-            },
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/WalletsListResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "List wallets for a customer",
-          "tags": [
-            "Wallets"
-          ]
-        }
-      },
-      "/customers/{customerId}/wallets/{walletId}": {
-        "get": {
-          "operationId": "WalletsController_getWallet",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "walletId",
-              "required": true,
-              "in": "path",
-              "schema": {
-                "type": "string",
-                "description": "The ID of the wallet to get."
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/WalletResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Get a wallet and balances for a customer",
-          "tags": [
-            "Wallets"
-          ]
-        }
-      },
-      "/customers/{customerId}/virtual_accounts": {
-        "post": {
-          "operationId": "VirtualAccountsController_create",
-          "parameters": [
-            {
-              "name": "idempotency-key",
-              "required": true,
-              "in": "header",
-              "description": "UUID for request idempotency (auto-generated in development if not provided)",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "requestBody": {
-            "required": true,
-            "description": "ACH/Wire→Crypto virtual account configuration",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                },
-                "examples": {
-                  "ach_to_solana": {
-                    "value": {
-                      "source": {
-                        "currency": "usd"
-                      },
-                      "destination": {
-                        "payment_rail": "solana",
-                        "currency": "usdc",
-                        "address": "targetSolanaAddress1111111111111111111111111111"
-                      },
-                      "developer_fee_percent": "0.5"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "201": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/VirtualAccountResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Create a virtual account",
-          "tags": [
-            "Virtual Accounts"
-          ]
-        },
-        "get": {
-          "operationId": "VirtualAccountsController_list",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "starting_after",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A virtual account ID. If provided, returns the next page starting after this virtual account in the timeline (which is ordered newest → oldest). Implies that virtual accounts older than the specified ID will be returned. Mutually exclusive with ending_before."
-              }
-            },
-            {
-              "name": "ending_before",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A virtual account ID. If provided, returns the previous page ending before this virtual account in the timeline (newest → oldest). Implies that virtual accounts newer than the specified ID will be returned. Mutually exclusive with starting_after."
-              }
-            },
-            {
-              "name": "limit",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "minimum": 1,
-                "maximum": 100,
-                "type": "integer",
-                "description": "Number of items to return."
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/VirtualAccountResponseDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "summary": "List virtual accounts for customer",
-          "tags": [
-            "Virtual Accounts"
-          ]
-        }
-      },
-      "/customers/{customerId}/virtual_accounts/{virtualAccountId}": {
-        "get": {
-          "operationId": "VirtualAccountsController_get",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "virtualAccountId",
-              "required": true,
-              "in": "path",
-              "schema": {
-                "type": "string",
-                "description": "The ID of the virtual account to get."
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/VirtualAccountResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Get virtual account by id",
-          "tags": [
-            "Virtual Accounts"
-          ]
-        }
-      },
-      "/transfers": {
-        "post": {
-          "operationId": "TransfersController_create",
-          "parameters": [
-            {
-              "name": "idempotency-key",
-              "required": true,
-              "in": "header",
-              "description": "UUID for request idempotency (auto-generated in development if not provided)",
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "requestBody": {
-            "required": true,
-            "description": "Transfer object to be created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                },
-                "examples": {
-                  "ach_onramp_to_solana": {
-                    "summary": "ACH onramp to Solana USDC",
-                    "value": {
-                      "amount": "75.0",
-                      "on_behalf_of": "cust_123",
-                      "source": {
-                        "payment_rail": "ach_push",
-                        "currency": "usd"
-                      },
-                      "destination": {
-                        "payment_rail": "solana",
-                        "currency": "usdc",
-                        "to_address": "SolanaDest111111111111111111111111111",
-                        "wallet_id": "wallet_123"
+              },
+              "examples": {
+                "individual": {
+                  "value": {
+                    "type": "individual",
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "email": "john.doe@example.com",
+                    "birth_date": "1990-01-01",
+                    "residential_address": {
+                      "street_line_1": "123 Main Street",
+                      "city": "Portland",
+                      "subdivision": "US-ME",
+                      "postal_code": "04101",
+                      "country": "USA"
+                    },
+                    "identifying_information": [
+                      {
+                        "type": "ssn",
+                        "issuing_country": "USA",
+                        "number": "123-45-6789"
                       }
-                    }
-                  },
-                  "crypto_offramp_to_ach": {
-                    "summary": "Crypto (Ethereum USDC) → ACH",
-                    "value": {
-                      "amount": "100.0",
-                      "on_behalf_of": "cust_123",
-                      "source": {
-                        "payment_rail": "ethereum",
-                        "currency": "usdc",
-                        "from_address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
-                      },
-                      "destination": {
-                        "payment_rail": "ach",
-                        "currency": "usd",
-                        "external_account_id": "ext_123"
-                      }
-                    }
-                  },
-                  "flexible_amount": {
-                    "summary": "Flexible amount transfer (omit amount)",
-                    "value": {
-                      "on_behalf_of": "cust_123",
-                      "source": {
-                        "payment_rail": "sepa",
-                        "currency": "eur"
-                      },
-                      "destination": {
-                        "payment_rail": "ethereum",
-                        "currency": "usdc",
-                        "to_address": "0xb794f5ea0ba39494ce839613fffba74279579268"
-                      },
-                      "features": {
-                        "flexible_amount": true
-                      }
-                    }
+                    ],
+                    "endorsements": [
+                      "base"
+                    ],
+                    "signed_agreement_id": "agr_test_abc123xyz"
                   }
                 }
               }
             }
-          },
-          "responses": {
-            "201": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/TransferResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Create a transfer",
-          "tags": [
-            "Transfers"
-          ]
+          }
         },
-        "get": {
-          "operationId": "TransfersController_list",
-          "parameters": [
-            {
-              "name": "starting_after",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A transfer ID. If provided, returns the next page starting after this transfer in the timeline (which is ordered newest → oldest). Implies that transfers older than the specified ID will be returned. Mutually exclusive with ending_before."
-              }
-            },
-            {
-              "name": "ending_before",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A transfer ID. If provided, returns the previous page ending before this transfer in the timeline (newest → oldest). Implies that transfers newer than the specified ID will be returned. Mutually exclusive with starting_after."
-              }
-            },
-            {
-              "name": "limit",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "minimum": 1,
-                "maximum": 100,
-                "type": "integer",
-                "description": "Number of items to return."
-              }
-            },
-            {
-              "name": "state",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "The state of the transfer.",
-                "enum": [
-                "awaiting_funds",
-                "in_review",
-                "kyc_required",
-                "kyc_in_review",
-                "funds_received",
-                "payment_submitted",
-                "payment_processed",
-                "undeliverable",
-                "returned",
-                "refunded",
-                "error",
-                "canceled"
-              ]
-              }
-            },
-            {
-              "name": "from",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "The ID of the source wallet."
-              }
-            },
-            {
-              "name": "to",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "The ID of the destination wallet."
-              }
-            }
-          ],
-          "responses": {
-            "201": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/TransfersListResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "List transfers",
-          "tags": [
-            "Transfers"
-          ]
-        }
-      },
-      "/transfers/{transferId}": {
-        "get": {
-          "operationId": "TransfersController_get",
-          "parameters": [
-            {
-              "name": "transferId",
-              "required": true,
-              "in": "path",
-              "schema": {
-                "type": "string",
-                "description": "The ID of the transfer."
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/TransferResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Get a transfer by id",
-          "tags": [
-            "Transfers"
-          ]
-        }
-      },
-      "/customers/{customerId}/liquidation_addresses": {
-        "post": {
-          "operationId": "LiquidationAddressesController_create",
-          "parameters": [
-            {
-              "name": "idempotency-key",
-              "required": true,
-              "in": "header",
-              "description": "UUID for request idempotency (auto-generated in development if not provided)",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "requestBody": {
-            "required": true,
+        "responses": {
+          "201": {
+            "description": "Customer object created",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "chain": {
-                      "type": "string",
-                      "description": "Blockchain network for the liquidation address (ethereum, solana, polygon, etc.)"
+                  "$ref": "#/components/schemas/CustomerResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error."
+          },
+          "409": {
+            "description": "Idempotency key conflict."
+          }
+        },
+        "summary": "Create a new customer",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/customers/{customerId}": {
+      "put": {
+        "operationId": "CustomersController_update",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "description": "UUID for request idempotency (auto-generated in development if not provided)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerClientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer object updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update customer",
+        "tags": [
+          "Customers"
+        ]
+      },
+      "get": {
+        "operationId": "CustomersController_findOne",
+        "parameters": [
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get customer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get customer and check KYC status",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/customers/{customerId}/wallets": {
+      "post": {
+        "operationId": "WalletsController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "description": "UUID for request idempotency (auto-generated in development if not provided)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWalletClientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new custodial wallet for a customer",
+        "tags": [
+          "Wallets"
+        ]
+      },
+      "get": {
+        "operationId": "WalletsController_listForCustomer",
+        "parameters": [
+          {
+            "name": "starting_after",
+            "required": false,
+            "in": "query",
+            "description": "A wallet ID. If provided, returns the next page starting after this wallet in the timeline (which is ordered newest → oldest). Implies that wallets older than the specified ID will be returned. Mutually exclusive with ending_before.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ending_before",
+            "required": false,
+            "in": "query",
+            "description": "A wallet ID. If provided, returns the previous page ending before this wallet in the timeline (newest → oldest). Implies that wallets newer than the specified ID will be returned. Mutually exclusive with starting_after.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items to return.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletsListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List wallets for a customer",
+        "tags": [
+          "Wallets"
+        ]
+      }
+    },
+    "/customers/{customerId}/wallets/{walletId}": {
+      "get": {
+        "operationId": "WalletsController_getWallet",
+        "parameters": [
+          {
+            "name": "walletId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the wallet to get.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a wallet and balances for a customer",
+        "tags": [
+          "Wallets"
+        ]
+      }
+    },
+    "/customers/{customerId}/virtual_accounts": {
+      "post": {
+        "operationId": "VirtualAccountsController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "description": "UUID for request idempotency (auto-generated in development if not provided)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Virtual account configuration for fiat-to-crypto conversion",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVirtualAccountClientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VirtualAccountResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a virtual account",
+        "tags": [
+          "Virtual Accounts"
+        ]
+      },
+      "get": {
+        "operationId": "VirtualAccountsController_list",
+        "parameters": [
+          {
+            "name": "starting_after",
+            "required": false,
+            "in": "query",
+            "description": "A virtual account ID. If provided, returns the next page starting after this virtual account in the timeline (which is ordered newest → oldest). Implies that virtual accounts older than the specified ID will be returned. Mutually exclusive with ending_before.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ending_before",
+            "required": false,
+            "in": "query",
+            "description": "A virtual account ID. If provided, returns the previous page ending before this virtual account in the timeline (newest → oldest). Implies that virtual accounts newer than the specified ID will be returned. Mutually exclusive with starting_after.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items to return.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VirtualAccountsListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List virtual accounts for customer",
+        "tags": [
+          "Virtual Accounts"
+        ]
+      }
+    },
+    "/customers/{customerId}/virtual_accounts/{virtualAccountId}": {
+      "get": {
+        "operationId": "VirtualAccountsController_get",
+        "parameters": [
+          {
+            "name": "virtualAccountId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the virtual account to get.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VirtualAccountResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get virtual account by id",
+        "tags": [
+          "Virtual Accounts"
+        ]
+      }
+    },
+    "/transfers": {
+      "post": {
+        "operationId": "TransfersController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "description": "UUID for request idempotency (auto-generated in development if not provided)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Transfer object to be created",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              },
+              "examples": {
+                "ach_onramp_to_solana": {
+                  "summary": "ACH onramp to Solana USDC",
+                  "value": {
+                    "amount": "75.0",
+                    "on_behalf_of": "cust_123",
+                    "source": {
+                      "payment_rail": "ach_push",
+                      "currency": "usd"
                     },
-                    "currency": {
-                      "type": "string", 
-                      "description": "Cryptocurrency to accept at this liquidation address (usdc, usdt, dai, etc.)"
-                    },
-                    "destination_payment_rail": {
-                      "type": "string",
-                      "description": "Payment method for converted funds (wire, ach, sepa, solana, etc.)"
-                    },
-                    "destination_currency": {
-                      "type": "string",
-                      "description": "Target currency for conversion (usd, eur, usdc, etc.)"
-                    },
-                    "external_account_id": {
-                      "type": "string",
-                      "description": "External bank account ID for fiat payouts (required for fiat destinations)"
-                    },
-                    "destination_address": {
-                      "type": "string",
-                      "description": "Cryptocurrency address for crypto-to-crypto liquidation"
-                    },
-                    "custom_developer_fee_percent": {
-                      "type": "string",
-                      "description": "Custom fee percentage for this liquidation address (e.g., '0.25' for 0.25%)"
+                    "destination": {
+                      "payment_rail": "solana",
+                      "currency": "usdc",
+                      "to_address": "SolanaDest111111111111111111111111111",
+                      "wallet_id": "wallet_123"
                     }
-                  },
-                  "required": ["chain", "currency", "destination_payment_rail", "destination_currency"]
+                  }
                 },
-                "examples": {
-                  "crypto_to_fiat": {
-                    "summary": "Crypto to USD via Wire",
-                    "description": "Liquidation address that converts Ethereum USDC to USD sent via wire transfer",
-                    "value": {
+                "crypto_offramp_to_ach": {
+                  "summary": "Crypto (Ethereum USDC) → ACH",
+                  "value": {
+                    "amount": "100.0",
+                    "on_behalf_of": "cust_123",
+                    "source": {
+                      "payment_rail": "ethereum",
+                      "currency": "usdc",
+                      "from_address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+                    },
+                    "destination": {
+                      "payment_rail": "ach",
+                      "currency": "usd",
+                      "external_account_id": "ext_123"
+                    }
+                  }
+                },
+                "flexible_amount": {
+                  "summary": "Flexible amount transfer (omit amount)",
+                  "value": {
+                    "on_behalf_of": "cust_123",
+                    "source": {
+                      "payment_rail": "sepa",
+                      "currency": "eur"
+                    },
+                    "destination": {
+                      "payment_rail": "ethereum",
+                      "currency": "usdc",
+                      "to_address": "0xb794f5ea0ba39494ce839613fffba74279579268"
+                    },
+                    "features": {
+                      "flexible_amount": true
+                    }
+                  }
+                },
+                "intra_wallet_transfer": {
+                  "summary": "Intra-wallet transfer (wallet to chain)",
+                  "value": {
+                    "amount": "5.0",
+                    "on_behalf_of": "cust_123",
+                    "source": {
+                      "payment_rail": "wallet",
+                      "currency": "usdb",
+                      "wallet_id": "wallet_123"
+                    },
+                    "destination": {
+                      "payment_rail": "base",
+                      "currency": "usdc",
+                      "wallet_id": "wallet_123"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a transfer",
+        "tags": [
+          "Transfers"
+        ]
+      },
+      "get": {
+        "operationId": "TransfersController_list",
+        "parameters": [
+          {
+            "name": "starting_after",
+            "required": false,
+            "in": "query",
+            "description": "This is a transfer id. If this is specified, the next page that starts with a transfer right AFTER the specified transfer id on the transfer timeline, which is always ordered from the newest to the oldest by creation time, will be returned. This also implies that transfers older than the specified transfer id will be returned (shouldn't be set if ending_before is set)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ending_before",
+            "required": false,
+            "in": "query",
+            "description": "This is a transfer id. If this is specified, the previous page that ends with a transfer right BEFORE the specified transfer id on the transfer timeline, which is always ordered from the newest to the oldest by creation time, will be returned. This also implies that transfers newer than the specified transfer id will be returned (shouldn't be set if starting_after is set)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "The number of items to return (default of 10, max of 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers by customer ID",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tx_hash",
+            "required": false,
+            "in": "query",
+            "description": "The hash of the transaction",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "updated_after_ms",
+            "required": false,
+            "in": "query",
+            "description": "This is a unix timestamp in milliseconds. If this is specified, objects updated AFTER the specified timestamp will be returned",
+            "schema": {
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "type": "number"
+            }
+          },
+          {
+            "name": "updated_before_ms",
+            "required": false,
+            "in": "query",
+            "description": "This is a unix timestamp in milliseconds. If this is specified, objects updated BEFORE the specified timestamp will be returned",
+            "schema": {
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers by their external state. See Transfer States for more details.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransfersListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List transfers",
+        "tags": [
+          "Transfers"
+        ]
+      }
+    },
+    "/transfers/{transferId}": {
+      "get": {
+        "operationId": "TransfersController_get",
+        "parameters": [
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the transfer.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a transfer by id",
+        "tags": [
+          "Transfers"
+        ]
+      }
+    },
+    "/customers/{customerId}/liquidation_addresses": {
+      "post": {
+        "operationId": "LiquidationAddressesController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "description": "UUID for request idempotency (auto-generated in development if not provided)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "example": {
                       "chain": "ethereum",
                       "currency": "usdc",
                       "destination_payment_rail": "wire",
-                      "destination_currency": "usd", 
+                      "destination_currency": "usd",
                       "external_account_id": "ext_123",
                       "custom_developer_fee_percent": "0.25"
                     }
                   },
-                  "crypto_to_crypto": {
-                    "summary": "Crypto to Crypto on Solana",
-                    "description": "Liquidation address that forwards Solana USDC to another Solana address",
-                    "value": {
+                  {
+                    "example": {
                       "chain": "solana",
                       "currency": "usdc",
                       "destination_payment_rail": "solana",
@@ -788,1825 +768,1755 @@
                       "destination_address": "SolanaDest111111111111111111111111111"
                     }
                   }
-                }
-              }
-            }
-          },
-          "responses": {
-            "201": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/LiquidationAddressResponseDto"
+                ]
+              },
+              "examples": {
+                "crypto_to_fiat": {
+                  "summary": "Crypto to USD via Wire",
+                  "description": "Liquidation address that converts Ethereum USDC to USD sent via wire transfer",
+                  "value": {
+                    "chain": "ethereum",
+                    "currency": "usdc",
+                    "destination_payment_rail": "wire",
+                    "destination_currency": "usd",
+                    "external_account_id": "ext_123",
+                    "custom_developer_fee_percent": "0.25"
+                  }
+                },
+                "crypto_to_crypto": {
+                  "summary": "Crypto to Crypto on Solana",
+                  "description": "Liquidation address that forwards Solana USDC to another Solana address",
+                  "value": {
+                    "chain": "solana",
+                    "currency": "usdc",
+                    "destination_payment_rail": "solana",
+                    "destination_currency": "usdc",
+                    "destination_address": "SolanaDest11111111111111111111111111111"
                   }
                 }
               }
             }
-          },
-          "summary": "Create a liquidation address for a customer",
-          "tags": [
-            "Liquidation Addresses"
-          ]
+          }
         },
-        "get": {
-          "operationId": "LiquidationAddressesController_list",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "starting_after",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A liquidation address ID. If provided, returns the next page starting after this liquidation address in the timeline (which is ordered newest → oldest). Implies that liquidation addresses older than the specified ID will be returned. Mutually exclusive with ending_before."
-              }
-            },
-            {
-              "name": "ending_before",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A liquidation address ID. If provided, returns the previous page ending before this liquidation address in the timeline (newest → oldest). Implies that liquidation addresses newer than the specified ID will be returned. Mutually exclusive with starting_after."
-              }
-            },
-            {
-              "name": "limit",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "minimum": 1,
-                "maximum": 100,
-                "type": "integer",
-                "description": "Number of items to return."
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/LiquidationAddressesListResponseDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "summary": "List liquidation addresses for a customer",
-          "tags": [
-            "Liquidation Addresses"
-          ]
-        }
-      },
-      "/customers/{customerId}/liquidation_addresses/{liquidationAddressId}/drains": {
-        "get": {
-          "operationId": "LiquidationAddressesController_listDrains",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "liquidationAddressId",
-              "required": true,
-              "in": "path",
-              "schema": {
-                "type": "string",
-                "description": "The ID of the liquidation address."
-              }
-            },
-            {
-              "name": "starting_after",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A drain ID. If provided, returns the next page starting after this drain in the timeline (which is ordered newest → oldest). Implies that drains older than the specified ID will be returned. Mutually exclusive with ending_before."
-              }
-            },
-            {
-              "name": "ending_before",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "A drain ID. If provided, returns the previous page ending before this drain in the timeline (newest → oldest). Implies that drains newer than the specified ID will be returned. Mutually exclusive with starting_after."
-              }
-            },
-            {
-              "name": "limit",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "minimum": 1,
-                "maximum": 100,
-                "type": "integer",
-                "description": "Number of items to return."
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/LiquidationDrainResponseDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Get drain history of a liquidation address",
-          "tags": [
-            "Liquidation Addresses"
-          ]
-        }
-      },
-      "/customers/{customerId}/liquidation_addresses/{liquidationAddressId}": {
-        "get": {
-          "operationId": "LiquidationAddressesController_get",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "liquidationAddressId",
-              "required": true,
-              "in": "path",
-              "schema": {
-                "type": "string",
-                "description": "The ID of the liquidation address."
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/LiquidationAddressResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Get liquidation address by id",
-          "tags": [
-            "Liquidation Addresses"
-          ]
-        }
-      },
-      "/customers/{customerId}/external_accounts": {
-        "post": {
-          "operationId": "ExternalAccountsController_create",
-          "parameters": [
-            {
-              "name": "idempotency-key",
-              "required": true,
-              "in": "header",
-              "description": "UUID for request idempotency (auto-generated in development if not provided)",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "requestBody": {
-            "required": true,
-            "description": "Bank account details (US banks only)",
+        "responses": {
+          "201": {
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
-                },
-                "examples": {
-                  "us_checking": {
-                    "value": {
-                      "currency": "usd",
-                      "account_type": "us",
-                      "bank_name": "Lead Bank",
-                      "account_name": "John Checking Account",
-                      "first_name": "John",
-                      "last_name": "Doe",
-                      "account_owner_type": "individual",
-                      "account_owner_name": "John Doe",
-                      "account": {
-                        "routing_number": "101019644",
-                        "account_number": "215268129123",
-                        "checking_or_savings": "checking"
-                      },
-                      "address": {
-                        "street_line_1": "923 Folsom Street",
-                        "country": "USA",
-                        "state": "CA",
-                        "city": "San Francisco",
-                        "postal_code": "94107"
-                      }
+                  "$ref": "#/components/schemas/LiquidationAddressResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a liquidation address for a customer",
+        "tags": [
+          "Liquidation Addresses"
+        ]
+      },
+      "get": {
+        "operationId": "LiquidationAddressesController_list",
+        "parameters": [
+          {
+            "name": "starting_after",
+            "required": false,
+            "in": "query",
+            "description": "A liquidation address ID. If provided, returns the next page starting after this liquidation address in the timeline (which is ordered newest → oldest). Implies that liquidation addresses older than the specified ID will be returned. Mutually exclusive with ending_before.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ending_before",
+            "required": false,
+            "in": "query",
+            "description": "A liquidation address ID. If provided, returns the previous page ending before this liquidation address in the timeline (newest → oldest). Implies that liquidation addresses newer than the specified ID will be returned. Mutually exclusive with starting_after.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items to return.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidationAddressesListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List liquidation addresses for a customer",
+        "tags": [
+          "Liquidation Addresses"
+        ]
+      }
+    },
+    "/customers/{customerId}/liquidation_addresses/{liquidationAddressId}/drains": {
+      "get": {
+        "operationId": "LiquidationAddressesController_listDrains",
+        "parameters": [
+          {
+            "name": "liquidationAddressId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the liquidation address.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "starting_after",
+            "required": false,
+            "in": "query",
+            "description": "A drain ID. If provided, returns the next page starting after this drain in the timeline (which is ordered newest → oldest). Implies that drains older than the specified ID will be returned. Mutually exclusive with ending_before.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ending_before",
+            "required": false,
+            "in": "query",
+            "description": "A drain ID. If provided, returns the previous page ending before this drain in the timeline (newest → oldest). Implies that drains newer than the specified ID will be returned. Mutually exclusive with starting_after.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items to return.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidationDrainsListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get drain history of a liquidation address",
+        "tags": [
+          "Liquidation Addresses"
+        ]
+      }
+    },
+    "/customers/{customerId}/liquidation_addresses/{liquidationAddressId}": {
+      "get": {
+        "operationId": "LiquidationAddressesController_get",
+        "parameters": [
+          {
+            "name": "liquidationAddressId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the liquidation address.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidationAddressResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get liquidation address by id",
+        "tags": [
+          "Liquidation Addresses"
+        ]
+      }
+    },
+    "/customers/{customerId}/external_accounts": {
+      "post": {
+        "operationId": "ExternalAccountsController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "description": "UUID for request idempotency (auto-generated in development if not provided)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Bank account details (US banks only)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              },
+              "examples": {
+                "us_checking": {
+                  "value": {
+                    "currency": "usd",
+                    "account_type": "us",
+                    "bank_name": "Lead Bank",
+                    "account_name": "John Checking Account",
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "account_owner_type": "individual",
+                    "account_owner_name": "John Doe",
+                    "account": {
+                      "routing_number": "101019644",
+                      "account_number": "215268129123",
+                      "checking_or_savings": "checking"
+                    },
+                    "address": {
+                      "street_line_1": "923 Folsom Street",
+                      "country": "USA",
+                      "state": "CA",
+                      "city": "San Francisco",
+                      "postal_code": "94107"
                     }
                   }
                 }
               }
             }
-          },
-          "responses": {
-            "201": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/ExternalAccountResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Add a bank account for withdrawals",
-          "tags": [
-            "External Accounts"
-          ]
+          }
         },
-        "get": {
-          "operationId": "ExternalAccountsController_list",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "starting_after",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "An external account ID. If provided, returns the next page starting after this external account in the timeline (which is ordered newest → oldest). Implies that external accounts older than the specified ID will be returned. Mutually exclusive with ending_before."
-              }
-            },
-            {
-              "name": "ending_before",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "description": "An external account ID. If provided, returns the previous page ending before this external account in the timeline (newest → oldest). Implies that external accounts newer than the specified ID will be returned. Mutually exclusive with starting_after."
-              }
-            },
-            {
-              "name": "limit",
-              "required": false,
-              "in": "query",
-              "schema": {
-                "minimum": 1,
-                "maximum": 100,
-                "type": "integer",
-                "description": "Number of items to return."
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/ExternalAccountsListResponseDto"
-                  }
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalAccountResponseDto"
                 }
               }
             }
-          },
-          "summary": "List bank accounts for customer",
-          "tags": [
-            "External Accounts"
-          ]
-        }
-      },
-      "/customers/{customerId}/external_accounts/{externalAccountId}": {
-        "get": {
-          "operationId": "ExternalAccountsController_get",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "externalAccountId",
-              "required": true,
-              "in": "path",
-              "schema": {
-                "type": "string",
-                "description": "The ID of the external account."
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/ExternalAccountResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "summary": "Get bank account by id",
-          "tags": [
-            "External Accounts"
-          ]
+          }
         },
-        "delete": {
-          "operationId": "ExternalAccountsController_delete",
-          "parameters": [
-            {
-              "name": "customerId",
-              "required": true,
-              "in": "path",
-              "description": "Customer ID",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "externalAccountId",
-              "required": true,
-              "in": "path",
-              "schema": {
-                "type": "string",
-                "description": "The ID of the external account."
-              }
-            }
-          ],
-          "responses": {
-            "204": {
-              "description": "Bank account removed successfully"
-            }
-          },
-          "summary": "Remove bank account",
-          "tags": [
-            "External Accounts"
-          ]
-        }
+        "summary": "Add a bank account for withdrawals",
+        "tags": [
+          "External Accounts"
+        ]
       },
-      "/ping": {
-        "get": {
-          "operationId": "PingController_ping",
-          "parameters": [],
-          "responses": {
-            "200": {
-              "description": ""
+      "get": {
+        "operationId": "ExternalAccountsController_list",
+        "parameters": [
+          {
+            "name": "starting_after",
+            "required": false,
+            "in": "query",
+            "description": "An external account ID. If provided, returns the next page starting after this external account in the timeline (which is ordered newest → oldest). Implies that external accounts older than the specified ID will be returned. Mutually exclusive with ending_before.",
+            "schema": {
+              "type": "string"
             }
           },
-          "tags": [
-            "Ping"
-          ]
-        }
+          {
+            "name": "ending_before",
+            "required": false,
+            "in": "query",
+            "description": "An external account ID. If provided, returns the previous page ending before this external account in the timeline (newest → oldest). Implies that external accounts newer than the specified ID will be returned. Mutually exclusive with starting_after.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items to return.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalAccountsListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List bank accounts for customer",
+        "tags": [
+          "External Accounts"
+        ]
       }
     },
-    "info": {
-      "title": "Payment API",
-      "description": "\nAPI documentation for the payment processing service\n\n## Quick Start\n1. API-Key will be automatically set to \"test-api-key\" for testing\n2. Tenant ID is now automatically resolved from your API key\n3. idempotency-key will be auto-generated for write operations if not provided\n\n## Headers\n- **api-key**: Your tenant API key (defaults to \"test-api-key\" in Swagger)\n- **Tenant ID**: Automatically resolved from your API key\n- **idempotency-key**: UUID for request idempotency (auto-generated if not provided)\n        ",
-      "version": "1.0",
-      "contact": {}
-    },
-    "tags": [],
-    "servers": [
-      {
-        "url": "http://localhost:3000",
-        "description": "Development server"
-      }
-    ],
-    "components": {
-      "securitySchemes": {
-        "api-key": {
-          "type": "apiKey",
-          "in": "header",
-          "name": "api-key",
-          "description": "Tenant API key (defaults to \"test-api-key\" in Swagger)"
+    "/customers/{customerId}/external_accounts/{externalAccountId}": {
+      "get": {
+        "operationId": "ExternalAccountsController_get",
+        "parameters": [
+          {
+            "name": "externalAccountId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the external account.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalAccountResponseDto"
+                }
+              }
+            }
+          }
         },
-        "idempotency-key": {
-          "type": "apiKey",
-          "in": "header",
-          "name": "idempotency-key",
-          "description": "UUID for request idempotency (auto-generated if not provided)"
-        }
+        "summary": "Get bank account by id",
+        "tags": [
+          "External Accounts"
+        ]
       },
-      "schemas": {
-        "CustomerCreateRequest": {
+      "delete": {
+        "operationId": "ExternalAccountsController_delete",
+        "parameters": [
+          {
+            "name": "externalAccountId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the external account.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Bank account removed successfully"
+          }
+        },
+        "summary": "Remove bank account",
+        "tags": [
+          "External Accounts"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Payment API",
+    "description": "\nAPI documentation for the payment processing service\n\n## Quick Start\n1. X-Access-Key will be automatically set to \"test-api-key\" for testing\n2. Tenant ID is now automatically resolved from your API key\n3. idempotency-key will be auto-generated for write operations if not provided\n\n## Headers\n- **x-access-key**: Your tenant API key (defaults to \"test-api-key\" in Swagger)\n- **Tenant ID**: Automatically resolved from your API key\n- **idempotency-key**: UUID for request idempotency (auto-generated if not provided)\n        ",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "x-access-key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-access-key",
+        "description": "Tenant API key (defaults to \"test-api-key\" in Swagger)"
+      },
+      "idempotency-key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "idempotency-key",
+        "description": "UUID for request idempotency (auto-generated if not provided)"
+      }
+    },
+    "schemas": {
+      "EndorsementDto": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "base",
+              "sepa",
+              "ach",
+              "wire",
+              "swift",
+              "spei",
+              "ach_same_day",
+              "ach_push"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "approved",
+              "revoked",
+              "pending",
+              "under_review",
+              "rejected"
+            ]
+          },
+          "additional_requirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "status"
+        ]
+      },
+      "CustomerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
           "type": {
             "type": "string",
-            "enum": ["individual"],
-            "description": "Customer kind: individual or business."
+            "enum": [
+              "individual",
+              "business"
+            ],
+            "description": "Customer type"
           },
           "first_name": {
-            "type": "string",
-            "description": "First name of the individual."
+            "type": "string"
           },
           "last_name": {
-            "type": "string",
-            "description": "Last name of the individual."
+            "type": "string"
           },
           "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Primary email address for the customer."
+            "type": "string"
           },
-          "birth_date": {
+          "status": {
             "type": "string",
-            "format": "date",
-            "description": "Date of birth in YYYY-MM-DD format. Must be at least 18 years ago."
+            "enum": [
+              "active",
+              "awaiting_questionnaire",
+              "awaiting_ubo",
+              "incomplete",
+              "not_started",
+              "offboarded",
+              "paused",
+              "rejected",
+              "under_review"
+            ]
           },
-          "residential_address": {
-            "type": "object",
-            "$ref": "#/components/schemas/AddressDto",
-            "description": "Physical residential address of the customer. PO Boxes are not accepted."
+          "has_accepted_terms_of_service": {
+            "type": "boolean",
+            "description": "Whether the customer has accepted the terms of service."
           },
-          "signed_agreement_id": {
-            "type": "string",
-            "description": "Identifier for the agreement the customer has signed; required to track acceptance of terms."
+          "rejection_reasons": {
+            "description": "KYC rejection reasons",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "requirements_due": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "future_requirements_due": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "endorsements": {
             "type": "array",
             "items": {
-              "type": "string"
-            },
-            "description": "List of endorsements being requested. If omitted, default endorsements (e.g. base, sepa) may be attempted."
+              "$ref": "#/components/schemas/EndorsementDto"
+            }
           },
-          "identifying_information": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IdentifyingInformation"
-            },
-            "description": "Documents or identifiers issued by authorities to verify identity (e.g. driver’s license, passport)."
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
           }
         },
-        "required": ["type"]
+        "required": [
+          "id",
+          "type",
+          "status"
+        ]
       },
-      "Address": {
+      "AddressDto": {
         "type": "object",
         "properties": {
           "street_line_1": {
             "type": "string",
-            "description": "First line of street address (physical address)."
+            "example": "123 Main Street",
+            "minLength": 4
           },
           "street_line_2": {
             "type": "string",
-            "description": "Second address line, e.g. apartment, suite, etc."
+            "example": "Apt 2B",
+            "minLength": 1
           },
           "city": {
             "type": "string",
-            "description": "City or locality."
+            "example": "Portland",
+            "minLength": 1
           },
           "subdivision": {
             "type": "string",
-            "description": "State, province, or region code."
+            "example": "US-ME",
+            "description": "ISO 3166-2 subdivision code. Must be supplied for US addresses.",
+            "minLength": 1,
+            "maxLength": 3
           },
           "postal_code": {
             "type": "string",
-            "description": "Postal or ZIP code."
+            "example": "04101",
+            "description": "Must be supplied for countries that use postal codes.",
+            "minLength": 1
           },
           "country": {
             "type": "string",
-            "description": "Country code (ISO or full name) or country name."
+            "example": "USA",
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.",
+            "minLength": 3,
+            "maxLength": 3
           }
         }
       },
-      "IdentifyingInformation": {
+      "IdentifyingInformationDto": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "description": "Type of document or identifier (e.g. passport, drivers_license)."
+            "example": "ssn",
+            "description": "The type of identifying document or tax identification number"
           },
           "issuing_country": {
             "type": "string",
-            "description": "Country that issued the identifier."
+            "example": "USA",
+            "description": "The ISO 3166-1 (three-character) country code that issued the provided document."
           },
           "number": {
             "type": "string",
-            "description": "Identifier number."
+            "example": "123-45-6789",
+            "description": "The unique identifier of the document."
           },
           "description": {
             "type": "string",
-            "description": "Optional note or description of the identifier."
+            "description": "A description describing the provided document. This field is required when `other` is selected."
           },
           "expiration": {
             "type": "string",
-            "format": "date",
-            "description": "Expiration date of the identifier."
+            "example": "2030-12-31",
+            "description": "The expiration date of the given document in yyyy-mm-dd format."
           },
           "image_front": {
             "type": "string",
-            "description": "Front image of the identifier (URL or base-64)."
+            "description": "Base64 encoded image of the front side of the provided document, following the data-uri scheme. Maximum File Size: 15MB. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
           },
           "image_back": {
             "type": "string",
-            "description": "Back image of the identifier (URL or base-64)."
+            "description": "Base64 encoded image of the back side of the provided document, following the data-uri scheme. Maximum File Size: 15MB. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
           }
         }
       },
-      "CustomerDocument": {
+      "DocumentDto": {
         "type": "object",
         "properties": {
           "purposes": {
+            "example": [
+              "proof_of_address"
+            ],
+            "description": "A list of purposes that the given document serves.",
             "type": "array",
             "items": {
               "type": "string"
-            },
-            "description": "Purposes for which the document is submitted (e.g. proof_of_account_purpose)."
+            }
           },
           "file": {
             "type": "string",
-            "description": "Document content (file upload or URL reference)."
+            "description": "Base64 encoded image of the provided document, following the data-uri scheme. Maximum File Size: 24MB. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
           },
           "description": {
             "type": "string",
-            "description": "Optional description of the document."
+            "description": "A description describing the provided document. This field is required when `other` is provided as one of the purposes."
           }
         }
       },
-        "EndorsementDto": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string",
-              "enum": [
-                "base",
-                "sepa",
-                "ach",
-                "wire",
-                "swift",
-                "spei",
-                "ach_same_day",
-                "ach_push"
-              ]
+      "UpdateCustomerClientDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "individual",
+              "business"
+            ],
+            "example": "individual",
+            "description": "Type of the customer (individual vs. business)."
+          },
+          "first_name": {
+            "type": "string",
+            "example": "John",
+            "description": "The first name of the individual.",
+            "minLength": 2,
+            "maxLength": 1024
+          },
+          "last_name": {
+            "type": "string",
+            "example": "Doe",
+            "description": "The last name of the individual.",
+            "minLength": 2,
+            "maxLength": 1024
+          },
+          "middle_name": {
+            "type": "string",
+            "description": "The middle name of the individual.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "transliterated_first_name": {
+            "type": "string",
+            "description": "Required when the `first_name` includes any non Latin-1 characters. Acceptable characters - Latin-1 Unicode Character Range: À-ÖØ-ßà-öø-ÿ; Standard Unicode Character Range:  -~",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "transliterated_middle_name": {
+            "type": "string",
+            "description": "Required when the `middle_name` includes any non Latin-1 characters. Acceptable characters - Latin-1 Unicode Character Range: À-ÖØ-ßà-öø-ÿ; Standard Unicode Character Range:  -~",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "transliterated_last_name": {
+            "type": "string",
+            "description": "Required when the `last_name` includes any non Latin-1 characters. Acceptable characters - Latin-1 Unicode Character Range: À-ÖØ-ßà-öø-ÿ; Standard Unicode Character Range:  -~",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "email": {
+            "type": "string",
+            "example": "john.doe@example.com",
+            "description": "The individuals primary email address",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "phone": {
+            "type": "string",
+            "description": "The individuals primary phone number in format \"+12223334444\"",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "birth_date": {
+            "type": "string",
+            "example": "1990-01-01",
+            "description": "Date of birth in format yyyy-mm-dd. Must be at least 18 years old.",
+            "minLength": 10,
+            "maxLength": 10
+          },
+          "nationality": {
+            "type": "string",
+            "description": "The ISO 3166-1 (three-character) country code representing the nationality of the customer."
+          },
+          "residential_address": {
+            "description": "The residential address of the individual. This must be a physical address, not a PO Box.",
+            "example": {
+              "street_line_1": "123 Main Street",
+              "city": "Portland",
+              "subdivision": "US-ME",
+              "postal_code": "04101",
+              "country": "USA"
             },
-            "status": {
-              "type": "string",
-              "enum": [
-                "incomplete",
-                "approved",
-                "revoked",
-                "pending",
-                "under_review",
-                "rejected"
-              ]
-            },
-            "additional_requirements": {
-              "type": "array",
-              "items": {
-                "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressDto"
               }
+            ]
+          },
+          "transliterated_residential_address": {
+            "description": "Required when any part of the `residential_address` includes any non Latin-1 characters. Acceptable characters - Latin-1 Unicode Character Range: À-ÖØ-ßà-öø-ÿ; Standard Unicode Character Range:  -~",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressDto"
+              }
+            ]
+          },
+          "identifying_information": {
+            "description": "Identifying information for the customer",
+            "example": [
+              {
+                "type": "ssn",
+                "issuing_country": "USA",
+                "number": "123-45-6789"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IdentifyingInformationDto"
             }
           },
-          "required": [
-            "name",
-            "status"
-          ]
-        },
-        "CustomerResponseDto": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "Unique identifier for customer record."
-            },
-            "first_name": {
-              "type": "string",
-              "description": "First name of the customer."
-            },
-            "last_name": {
-              "type": "string",
-              "description": "Last name of the customer."
-            },
-            "email": {
-              "type": "string",
-              "description": "Customer's email."
-            },
-            "status": {
-              "type": "string",
-              "description": "Current onboarding / verification status of the customer.",
-              "enum": [
-                "active",
-                "awaiting_questionnaire",
-                "awaiting_ubo",
-                "incomplete",
-                "not_started",
-                "offboarded",
-                "paused",
-                "rejected",
-                "under_review"
-              ]
-            },
-            "has_accepted_terms_of_service": {
-              "type": "boolean",
-              "description": "Whether the customer has accepted the terms of service."
-            },
-            "rejection_reasons": {
-              "description": "KYC rejection reasons",
-              "type": "array",
-              "items": {
-                "type": "object"
-              }
-            },
-            "requirements_due": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "KYC or other requirements still due for the customer."
-            },
-            "future_requirements_due": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Requirements that may be needed in the future (e.g. for higher volumes)."
-            },
-            "endorsements": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/EndorsementDto"
-              },
-              "description": "Status and details of requested endorsements."
-            },
-            "created_at": {
-              "type": "string",
-              "description": "Timestamp when customer was created."
-            },
-            "updated_at": {
-              "type": "string",
-              "description": "Timestamp of last update to customer record."
+          "documents": {
+            "description": "Documents for the customer",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentDto"
             }
           },
-          "required": [
-            "id",
-            "status"
-          ]
+          "signed_agreement_id": {
+            "type": "string",
+            "description": "The ID of the signed agreement that the customer completed.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "endorsements": {
+            "description": "List of endorsements to request for this customer. If omitted, we'll attempt to grant `base` and `sepa`.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "account_purpose": {
+            "type": "string",
+            "description": "What is the primary purpose of the customer's account?",
+            "enum": [
+              "charitable_donations",
+              "ecommerce_retail_payments",
+              "investment_purposes",
+              "operating_a_company",
+              "other",
+              "payments_to_friends_or_family_abroad",
+              "personal_or_living_expenses",
+              "protect_wealth",
+              "purchase_goods_and_services",
+              "receive_payment_for_freelancing",
+              "receive_salary"
+            ]
+          },
+          "account_purpose_other": {
+            "type": "string",
+            "description": "A supplemental description of the `account_purpose`. Required if the `account_purpose` is `other`."
+          },
+          "employment_status": {
+            "type": "string",
+            "description": "What is the customer's current employment status?",
+            "enum": [
+              "employed",
+              "homemaker",
+              "retired",
+              "self_employed",
+              "student",
+              "unemployed"
+            ]
+          },
+          "expected_monthly_payments_usd": {
+            "type": "string",
+            "description": "What is the expected monthly volume of payments the customer will be sending or receiving?",
+            "enum": [
+              "0_4999",
+              "5000_9999",
+              "10000_49999",
+              "50000_plus"
+            ]
+          },
+          "acting_as_intermediary": {
+            "type": "boolean",
+            "description": "Is the customer acting as an intermediary for a third party?"
+          },
+          "most_recent_occupation": {
+            "type": "string",
+            "description": "What is the customer's most recent occupation? Specify the relevant alphanumeric occupation code."
+          },
+          "source_of_funds": {
+            "type": "string",
+            "description": "The individuals source of funds, e.g. government_benefits, investments_loans, salary, etc.",
+            "enum": [
+              "company_funds",
+              "ecommerce_reseller",
+              "gambling_proceeds",
+              "gifts",
+              "government_benefits",
+              "inheritance",
+              "investments_loans",
+              "pension_retirement",
+              "salary",
+              "sale_of_assets_real_estate",
+              "savings",
+              "someone_elses_funds"
+            ]
+          },
+          "verified_govid_at": {
+            "type": "string",
+            "description": "The timestamp for when individual's government ID was successfully verified."
+          },
+          "verified_selfie_at": {
+            "type": "string",
+            "description": "The timestamp for when individual's selfie was successfully verified."
+          },
+          "completed_customer_safety_check_at": {
+            "type": "string",
+            "description": "The timestamp for when individual successfully passed customer safety check."
+          }
+        }
+      },
+      "CreateWalletClientDto": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "base"
+            ],
+            "example": "base"
+          }
         },
-        "AddressDto": {
-          "type": "object",
-          "properties": {
-            "street_line_1": {
-              "type": "string",
-              "minLength": 4,
-              "example": "123 Main Street",
-              "description": "Street address (minimum 4 characters)"
-            },
-            "street_line_2": {
-              "type": "string",
-              "example": "Apt 2B",
-              "description": "Optional address line 2"
-            },
-            "city": {
-              "type": "string",
-              "minLength": 1,
-              "example": "Portland",
-              "description": "City name"
-            },
-            "subdivision": {
-              "type": "string",
-              "pattern": "^US-[A-Z]{2}$",
-              "example": "US-ME",
-              "description": "ISO 3166-2 subdivision code with country prefix (required for USA): US-CA, US-TX, US-ME, etc."
-            },
-            "postal_code": {
-              "type": "string",
-              "example": "04101",
-              "description": "Postal code"
-            },
-            "country": {
-              "type": "string",
-              "minLength": 3,
-              "maxLength": 3,
-              "example": "USA",
-              "description": "ISO 3166-1 alpha-3 country code"
+        "required": [
+          "chain"
+        ]
+      },
+      "WalletBalanceDto": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "contract_address": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "balance",
+          "currency",
+          "chain"
+        ]
+      },
+      "WalletResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "balances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletBalanceDto"
             }
           }
         },
-        "UpdateCustomerClientDto": {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "individual",
-                "business"
-              ],
-              "example": "individual",
-              "description": "Type of customer"
-            },
-            "first_name": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 1024,
-              "example": "John",
-              "description": "First name (2-1024 characters)"
-            },
-            "last_name": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 1024,
-              "example": "Doe",
-              "description": "Last name (2-1024 characters)"
-            },
-            "email": {
-              "type": "string",
-              "format": "email",
-              "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
-              "example": "john.doe@example.com",
-              "description": "Email address"
-            },
-            "birth_date": {
-              "type": "string",
-              "example": "1990-01-01",
-              "description": "Birth date in yyyy-mm-dd format (must be 18+)"
-            },
-            "residential_address": {
-              "properties": {
-                "street_line_1": {
-                  "type": "string",
-                  "minLength": 4
-                },
-                "street_line_2": {
-                  "type": "string"
-                },
-                "city": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "subdivision": {
-                  "type": "string",
-                  "pattern": "^US-[A-Z]{2}$"
-                },
-                "postal_code": {
-                  "type": "string"
-                },
-                "country": {
-                  "type": "string",
-                  "minLength": 3,
-                  "maxLength": 3
-                }
-              },
-              "description": "Residential address",
-              "example": {
-                "street_line_1": "123 Main Street",
-                "city": "Portland",
-                "subdivision": "US-ME",
-                "postal_code": "04101",
-                "country": "USA"
-              },
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/AddressDto"
-                }
-              ]
-            },
-            "identifying_information": {
-              "items": {
-                "type": "object"
-              },
-              "description": "Tax identification and government documents",
-              "example": [
-                {
-                  "type": "ssn",
-                  "issuing_country": "USA",
-                  "number": "123-45-6789"
-                }
-              ],
-              "type": "array"
-            },
-            "endorsements": {
-              "type": "array",
-              "items": {
+        "required": [
+          "id",
+          "chain",
+          "address",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "WalletsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Total number of items in data"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletResponseDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "data"
+        ]
+      },
+      "VirtualAccountSourceDto": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "usd",
+              "eur",
+              "mxn"
+            ],
+            "description": "Fiat currency for incoming payments"
+          }
+        },
+        "required": [
+          "currency"
+        ]
+      },
+      "VirtualAccountDestinationDto": {
+        "type": "object",
+        "properties": {
+          "payment_rail": {
+            "type": "string",
+            "enum": [
+              "ethereum",
+              "polygon",
+              "solana",
+              "stellar",
+              "tron",
+              "base",
+              "arbitrum",
+              "avalanche_c_chain",
+              "optimism"
+            ],
+            "description": "Target blockchain network"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdt",
+              "usdb",
+              "dai",
+              "eurc",
+              "pyusd"
+            ],
+            "description": "Cryptocurrency to receive"
+          },
+          "address": {
+            "type": "string",
+            "description": "Destination blockchain address",
+            "minLength": 1
+          },
+          "blockchain_memo": {
+            "type": "string",
+            "description": "Optional blockchain memo for certain networks"
+          }
+        },
+        "required": [
+          "payment_rail",
+          "currency",
+          "address"
+        ]
+      },
+      "CreateVirtualAccountClientDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "required": [
+              "currency"
+            ],
+            "properties": {
+              "currency": {
                 "type": "string",
                 "enum": [
-                  "base",
-                  "sepa",
-                  "ach",
-                  "wire",
-                  "swift",
-                  "spei",
-                  "ach_same_day",
-                  "ach_push"
-                ]
-              },
-              "example": [
-                "base"
-              ],
-              "description": "Endorsements to request"
-            },
-            "signed_agreement_id": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 1024,
-              "example": "agr_test_1234567890abcdef",
-              "description": "ID of signed agreement (required for customer creation). Get from ToS acceptance flow."
-            },
-            "middle_name": {
-              "type": "string"
-            },
-            "transliterated_first_name": {
-              "type": "string"
-            },
-            "transliterated_middle_name": {
-              "type": "string"
-            },
-            "transliterated_last_name": {
-              "type": "string"
-            },
-            "phone": {
-              "type": "string"
-            },
-            "transliterated_residential_address": {
-              "type": "object",
-              "properties": {
-                "street_line_1": {
-                  "type": "string",
-                  "minLength": 4
-                },
-                "street_line_2": {
-                  "type": "string"
-                },
-                "city": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "subdivision": {
-                  "type": "string",
-                  "pattern": "^US-[A-Z]{2}$"
-                },
-                "postal_code": {
-                  "type": "string"
-                },
-                "country": {
-                  "type": "string",
-                  "minLength": 3,
-                  "maxLength": 3
-                }
-              },
-              "required": [
-                "street_line_1",
-                "city",
-                "country"
-              ]
-            },
-            "account_purpose": {
-              "type": "string",
-              "enum": [
-                "charitable_donations",
-                "ecommerce_retail_payments",
-                "investment_purposes",
-                "operating_a_company",
-                "other",
-                "payments_to_friends_or_family_abroad",
-                "personal_or_living_expenses",
-                "protect_wealth",
-                "purchase_goods_and_services",
-                "receive_payment_for_freelancing",
-                "receive_salary"
-              ]
-            },
-            "account_purpose_other": {
-              "type": "string"
-            },
-            "employment_status": {
-              "type": "string",
-              "enum": [
-                "employed",
-                "homemaker",
-                "retired",
-                "self_employed",
-                "student",
-                "unemployed"
-              ]
-            },
-            "expected_monthly_payments_usd": {
-              "type": "string",
-              "enum": [
-                "0_4999",
-                "5000_9999",
-                "10000_49999",
-                "50000_plus"
-              ]
-            },
-            "acting_as_intermediary": {
-              "type": "boolean"
-            },
-            "most_recent_occupation": {
-              "type": "string"
-            },
-            "source_of_funds": {
-              "type": "string",
-              "enum": [
-                "company_funds",
-                "ecommerce_reseller",
-                "gambling_proceeds",
-                "gifts",
-                "government_benefits",
-                "inheritance",
-                "investments_loans",
-                "pension_retirement",
-                "salary",
-                "sale_of_assets_real_estate",
-                "savings",
-                "someone_elses_funds"
-              ]
-            },
-            "nationality": {
-              "type": "string"
-            },
-            "verified_govid_at": {
-              "type": "string"
-            },
-            "verified_selfie_at": {
-              "type": "string"
-            },
-            "completed_customer_safety_check_at": {
-              "type": "string"
-            },
-            "documents": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "purposes": {
-                    "minItems": 1,
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": [
-                        "proof_of_account_purpose",
-                        "proof_of_address",
-                        "proof_of_individual_name_change",
-                        "proof_of_relationship",
-                        "proof_of_source_of_funds",
-                        "proof_of_source_of_wealth",
-                        "proof_of_tax_identification",
-                        "other"
-                      ]
-                    }
-                  },
-                  "file": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "description": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "purposes",
-                  "file"
+                  "usd",
+                  "eur",
+                  "mxn"
                 ]
               }
+            },
+            "description": "Source configuration for incoming fiat payments",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VirtualAccountSourceDto"
+              }
+            ]
+          },
+          "destination": {
+            "required": [
+              "payment_rail",
+              "currency",
+              "address"
+            ],
+            "properties": {
+              "payment_rail": {
+                "type": "string",
+                "enum": [
+                  "ethereum",
+                  "polygon",
+                  "solana",
+                  "stellar",
+                  "tron",
+                  "base",
+                  "arbitrum",
+                  "avalanche_c_chain",
+                  "optimism"
+                ]
+              },
+              "currency": {
+                "type": "string",
+                "enum": [
+                  "usdc",
+                  "usdt",
+                  "usdb",
+                  "dai",
+                  "eurc",
+                  "pyusd"
+                ]
+              },
+              "address": {
+                "type": "string",
+                "minLength": 1
+              },
+              "blockchain_memo": {
+                "type": "string"
+              }
+            },
+            "description": "Destination configuration for crypto conversion",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VirtualAccountDestinationDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "destination"
+        ]
+      },
+      "VirtualAccountSourceDepositInstructionsDto": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "bank_name": {
+            "type": "string"
+          },
+          "bank_address": {
+            "type": "string"
+          },
+          "bank_routing_number": {
+            "type": "string"
+          },
+          "bank_account_number": {
+            "type": "string"
+          },
+          "bank_beneficiary_name": {
+            "type": "string"
+          },
+          "bank_beneficiary_address": {
+            "type": "string"
+          },
+          "payment_rail": {
+            "type": "string"
+          },
+          "payment_rails": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         },
-        "WalletBalanceDto": {
-          "type": "object",
-          "properties": {
-            "balance": {
-              "type": "string",
-              "description": "The amount held in the wallet for this currency/asset."
-            },
-            "currency": {
-              "type": "string",
-              "description": "The currency/asset held in the wallet."
-            },
-            "chain": {
-              "type": "string",
-              "description": "The blockchain on which this balance is held (e.g. \"solana\", \"ethereum\")."
-            },
-            "contract_address": {
-              "type": "string",
-              "description": "If the currency is a token on a smart contract, this is the address of that contract."
-            }
+        "required": [
+          "currency",
+          "bank_name",
+          "bank_address",
+          "bank_routing_number",
+          "bank_account_number",
+          "bank_beneficiary_name",
+          "bank_beneficiary_address",
+          "payment_rail",
+          "payment_rails"
+        ]
+      },
+      "VirtualAccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
           },
-          "required": [
-            "balance",
-            "currency",
-            "chain"
-          ]
+          "status": {
+            "type": "string"
+          },
+          "customer_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "source_deposit_instructions": {
+            "$ref": "#/components/schemas/VirtualAccountSourceDepositInstructionsDto"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/VirtualAccountDestinationDto"
+          }
         },
-        "WalletResponseDto": {
-          "type": "object",
-    "properties": {
-      "id": {
-        "type": "string",
-        "description": "Unique identifier for the wallet."
+        "required": [
+          "id",
+          "status",
+          "customer_id",
+          "created_at",
+          "source_deposit_instructions",
+          "destination"
+        ]
       },
-      "chain": {
-        "type": "string",
-        "description": "The blockchain network where the wallet exists."
-      },
-      "address": {
-        "type": "string",
-        "description": "Blockchain address of the wallet."
-      },
-      "created_at": {
-        "type": "string",
-        "description": "UTC timestamp when the wallet was created. Format: date-time."
-      },
-      "updated_at": {
-        "type": "string",
-        "description": "UTC timestamp when the wallet was last updated. Format: date-time."
-      },
-      "balances": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/WalletBalanceDto"
+      "VirtualAccountsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Total number of items available.",
+            "example": 100
+          },
+          "data": {
+            "description": "Array of virtual accounts for the current page.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VirtualAccountResponseDto"
+            }
+          }
         },
-        "description": "List of balances held in this wallet across different currencies or tokens."
-      }
-    },
-          "required": [
-            "id",
-            "chain",
-            "address",
-            "created_at",
-            "updated_at"
-          ]
+        "required": [
+          "count",
+          "data"
+        ]
+      },
+      "TransferEndpointSideDto": {
+        "type": "object",
+        "properties": {
+          "payment_rail": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "from_address": {
+            "type": "string"
+          },
+          "to_address": {
+            "type": "string"
+          },
+          "external_account_id": {
+            "type": "string"
+          },
+          "wallet_id": {
+            "type": "string"
+          },
+          "wire_message": {
+            "type": "string"
+          },
+          "sepa_reference": {
+            "type": "string"
+          },
+          "swift_reference": {
+            "type": "string"
+          },
+          "swift_charges": {
+            "type": "string",
+            "enum": [
+              "our",
+              "sha"
+            ]
+          },
+          "ach_reference": {
+            "type": "string"
+          },
+          "blockchain_memo": {
+            "type": "string"
+          }
         },
-        "WalletsListResponseDto": {
-          "type": "object",
-          "properties": {
-            "count": {
-              "type": "number",
-              "description": "Total number of items in data"
-            },
-            "data": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/WalletResponseDto"
+        "required": [
+          "payment_rail",
+          "currency"
+        ]
+      },
+      "TransferDepositInstructionsDto": {
+        "type": "object",
+        "properties": {
+          "payment_rail": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "from_address": {
+            "type": "string"
+          },
+          "to_address": {
+            "type": "string"
+          },
+          "deposit_message": {
+            "type": "string"
+          },
+          "bank_name": {
+            "type": "string"
+          },
+          "bank_address": {
+            "type": "string"
+          },
+          "bank_routing_number": {
+            "type": "string"
+          },
+          "bank_account_number": {
+            "type": "string"
+          },
+          "bank_beneficiary_name": {
+            "type": "string"
+          },
+          "bank_beneficiary_address": {
+            "type": "string"
+          },
+          "blockchain_memo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "payment_rail",
+          "amount",
+          "currency"
+        ]
+      },
+      "TransferReceiptDto": {
+        "type": "object",
+        "properties": {
+          "initial_amount": {
+            "type": "string"
+          },
+          "exchange_fee": {
+            "type": "string"
+          },
+          "subtotal_amount": {
+            "type": "string"
+          },
+          "gas_fee": {
+            "type": "string"
+          },
+          "final_amount": {
+            "type": "string"
+          },
+          "destination_tx_hash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "initial_amount",
+          "exchange_fee",
+          "subtotal_amount"
+        ]
+      },
+      "TransferResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "on_behalf_of": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "awaiting_funds",
+              "in_review",
+              "funds_received",
+              "payment_submitted",
+              "payment_processed",
+              "undeliverable",
+              "returned",
+              "refunded",
+              "error",
+              "canceled"
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/TransferEndpointSideDto"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/TransferEndpointSideDto"
+          },
+          "source_deposit_instructions": {
+            "$ref": "#/components/schemas/TransferDepositInstructionsDto"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/TransferReceiptDto"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "on_behalf_of",
+          "currency",
+          "amount",
+          "state",
+          "source",
+          "destination",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "TransfersListResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Total number of items available.",
+            "example": 100
+          },
+          "data": {
+            "description": "Array of transfer items for the current page.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransferResponseDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "data"
+        ]
+      },
+      "LiquidationAddressResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "external_account_id": {
+            "type": "string"
+          },
+          "destination_wire_message": {
+            "type": "string"
+          },
+          "destination_payment_rail": {
+            "type": "string"
+          },
+          "destination_currency": {
+            "type": "string"
+          },
+          "destination_address": {
+            "type": "string"
+          },
+          "blockchain_memo": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "chain",
+          "address",
+          "currency",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "LiquidationDrainDestinationDto": {
+        "type": "object",
+        "properties": {
+          "payment_rail": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "to_address": {
+            "type": "string"
+          },
+          "external_account_id": {
+            "type": "string"
+          },
+          "imad": {
+            "type": "string"
+          },
+          "trace_number": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "payment_rail",
+          "currency"
+        ]
+      },
+      "LiquidationDrainResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "in_review",
+              "funds_received",
+              "payment_submitted",
+              "payment_processed",
+              "undeliverable",
+              "returned",
+              "refunded",
+              "error",
+              "canceled"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/LiquidationDrainDestinationDto"
+          },
+          "destination_tx_hash": {
+            "type": "string"
+          },
+          "deposit_tx_hash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "amount",
+          "currency",
+          "state",
+          "created_at",
+          "destination"
+        ]
+      },
+      "LiquidationDrainsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Total number of items available.",
+            "example": 100
+          },
+          "data": {
+            "description": "Array of liquidation drains for the current page.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LiquidationDrainResponseDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "data"
+        ]
+      },
+      "LiquidationAddressesListResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Total number of items available.",
+            "example": 100
+          },
+          "data": {
+            "description": "Array of liquidation addresses for the current page.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LiquidationAddressResponseDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "data"
+        ]
+      },
+      "ExternalAccountBankDetails": {
+        "type": "object",
+        "properties": {
+          "routing_number": {
+            "type": "string",
+            "description": "Bank routing number"
+          },
+          "last_4": {
+            "type": "string",
+            "description": "Last 4 digits of account number"
+          },
+          "checking_or_savings": {
+            "type": "string",
+            "description": "Account type: checking or savings"
+          }
+        },
+        "required": [
+          "routing_number",
+          "last_4",
+          "checking_or_savings"
+        ]
+      },
+      "ExternalAccountAddress": {
+        "type": "object",
+        "properties": {
+          "street_line_1": {
+            "type": "string",
+            "description": "Primary street address"
+          },
+          "street_line_2": {
+            "type": "string",
+            "description": "Secondary street address"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country code"
+          },
+          "state": {
+            "type": "string",
+            "description": "State code"
+          },
+          "city": {
+            "type": "string",
+            "description": "City name"
+          },
+          "postal_code": {
+            "type": "string",
+            "description": "Postal code"
+          }
+        },
+        "required": [
+          "street_line_1",
+          "country",
+          "state",
+          "city",
+          "postal_code"
+        ]
+      },
+      "ExternalAccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for external account"
+          },
+          "customer_id": {
+            "type": "string",
+            "description": "Customer ID this account belongs to"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "Last update timestamp"
+          },
+          "bank_name": {
+            "type": "string",
+            "description": "Bank name"
+          },
+          "account_name": {
+            "type": "string",
+            "description": "Account name"
+          },
+          "account_owner_name": {
+            "type": "string",
+            "description": "Full name of account owner"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "usd",
+              "eur",
+              "mxn"
+            ],
+            "description": "Account currency"
+          },
+          "account_owner_type": {
+            "type": "string",
+            "description": "Account owner type"
+          },
+          "account_type": {
+            "type": "string",
+            "description": "Account type"
+          },
+          "first_name": {
+            "type": "string",
+            "description": "First name of account owner"
+          },
+          "last_name": {
+            "type": "string",
+            "description": "Last name of account owner"
+          },
+          "account": {
+            "description": "Bank account details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExternalAccountBankDetails"
               }
-            }
+            ]
           },
-          "required": [
-            "count",
-            "data"
-          ]
-        },
-        "VirtualAccountSourceDepositInstructionsDto": {
-          "type": "object",
-          "properties": {
-            "currency": {
-              "type": "string",
-              "description": "The fiat currency that can be deposited (e.g., usd, eur)"
-            },
-            "bank_name": {
-              "type": "string",
-              "description": "The name of the bank that the customer should send the deposit to"
-            },
-            "bank_address": {
-              "type": "string",
-              "description": "The address of the bank that the customer should send the deposit to"
-            },
-            "bank_routing_number": {
-              "type": "string",
-              "description": "The routing number of the bank that the customer should send the deposit to"
-            },
-            "bank_account_number": {
-              "type": "string",
-              "description": "The account number of the bank that the customer should send the deposit to"
-            },
-            "bank_beneficiary_name": {
-              "type": "string",
-              "description": "The name of the beneficiary of the bank account that the customer should send the deposit to"
-            },
-            "bank_beneficiary_address": {
-              "type": "string",
-              "description": "The address of the beneficiary of the bank account that the customer should send the deposit to"
-            },
-            "payment_rail": {
-              "type": "string",
-              "description": "The primary payment rail supported by these deposit instructions"
-            },
-            "payment_rails": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "The payment rails supported by these deposit instructions (e.g., ach_push, wire, sepa)"
-            }
-          },
-          "required": [
-            "currency",
-            "bank_name",
-            "bank_address",
-            "bank_routing_number",
-            "bank_account_number",
-            "bank_beneficiary_name",
-            "bank_beneficiary_address",
-            "payment_rail",
-            "payment_rails"
-          ]
-        },
-        "VirtualAccountDestinationDto": {
-          "type": "object",
-          "properties": {
-            "currency": {
-              "type": "string",
-              "description": "The cryptocurrency that deposited fiat will be converted to (e.g., usdc, usdt)"
-            },
-            "payment_rail": {
-              "type": "string",
-              "description": "The blockchain network where the converted funds will be sent (e.g., solana, ethereum, polygon)"
-            },
-            "address": {
-              "type": "string",
-              "description": "The cryptocurrency wallet address that the customer wishes to ultimately receive funds at"
-            },
-            "blockchain_memo": {
-              "type": "string",
-              "description": "The memo to include when sending funds on chain. Only allowed for blockchains that support memos such as Stellar"
-            }
-          },
-          "required": [
-            "currency",
-            "payment_rail",
-            "address"
-          ]
-        },
-        "VirtualAccountResponseDto": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "A unique identifier for the virtual account"
-            },
-            "status": {
-              "type": "string",
-              "description": "The activation status of the virtual account",
-              "enum": ["activated", "deactivated"]
-            },
-            "customer_id": {
-              "type": "string",
-              "description": "The customer ID this virtual account belongs to"
-            },
-            "created_at": {
-              "type": "string",
-              "format": "date-time",
-              "description": "Time of creation of the virtual account"
-            },
-            "source_deposit_instructions": {
-              "$ref": "#/components/schemas/VirtualAccountSourceDepositInstructionsDto",
-              "description": "Bank details and instructions for customers to deposit fiat funds"
-            },
-            "destination": {
-              "$ref": "#/components/schemas/VirtualAccountDestinationDto",
-              "description": "The cryptocurrency destination where converted funds will be sent"
-            }
-          },
-          "required": [
-            "id",
-            "status",
-            "customer_id",
-            "created_at",
-            "source_deposit_instructions",
-            "destination"
-          ]
-        },
-        "TransferEndpointSideDto": {
-          "type": "object",
-          "properties": {
-            "payment_rail": {
-              "type": "string",
-              "description": "The payment network or blockchain used for this side of the transfer (e.g., ach, wire, solana, ethereum)"
-            },
-            "currency": {
-              "type": "string",
-              "description": "The currency for this endpoint (fiat like usd/eur or crypto like usdc/usdt)"
-            },
-            "from_address": {
-              "type": "string",
-              "description": "Cryptocurrency wallet address that funds will be sent from (for crypto sources)"
-            },
-            "to_address": {
-              "type": "string",
-              "description": "Cryptocurrency wallet address that funds will be delivered to (for crypto destinations)"
-            },
-            "external_account_id": {
-              "type": "string",
-              "description": "Reference to an external bank account for traditional banking transfers"
-            },
-            "wallet_id": {
-              "type": "string",
-              "description": "Reference to a custodial wallet for crypto transfers"
-            },
-            "wire_message": {
-              "type": "string",
-              "description": "Message to include with wire transfers (up to 140 characters for compliance)"
-            },
-            "sepa_reference": {
-              "type": "string",
-              "description": "Reference message for SEPA transactions (6-140 characters, helps with payment tracking)"
-            },
-            "swift_reference": {
-              "type": "string",
-              "description": "Payment reference for SWIFT transactions (up to 4 lines, 35 chars per line)"
-            },
-            "swift_charges": {
-              "type": "string",
-              "description": "Fee responsibility for SWIFT transfers: 'our' (sender pays all) or 'sha' (shared between parties)",
-              "enum": [
-                "our",
-                "sha"
-              ]
-            },
-            "ach_reference": {
-              "type": "string",
-              "description": "Reference message for ACH transactions (up to 10 alphanumeric characters)"
-            },
-            "blockchain_memo": {
-              "type": "string",
-              "description": "On-chain memo for blockchain transfers that support memos (e.g., Stellar, Tron)"
-            }
-          },
-          "required": [
-            "payment_rail",
-            "currency"
-          ]
-        },
-        "TransferDepositInstructionsDto": {
-          "type": "object",
-          "properties": {
-            "payment_rail": {
-              "type": "string",
-              "description": "The expected payment network for the customer's deposit (e.g., wire, ach, ethereum, solana)"
-            },
-            "amount": {
-              "type": "string",
-              "description": "Exact deposit amount required as a decimal string (e.g., '100.25', '0.1')"
-            },
-            "currency": {
-              "type": "string",
-              "description": "Currency of the required deposit"
-            },
-            "from_address": {
-              "type": "string",
-              "description": "Cryptocurrency address the customer must send from (for crypto deposits)"
-            },
-            "to_address": {
-              "type": "string",
-              "description": "Target cryptocurrency address for customer's deposit (for crypto deposits)"
-            },
-            "deposit_message": {
-              "type": "string",
-              "description": "Required message customer must include in wire memo, ACH description, or SEPA reference for proper processing"
-            },
-            "bank_name": {
-              "type": "string",
-              "description": "Name of the bank where customer should send their deposit"
-            },
-            "bank_address": {
-              "type": "string",
-              "description": "Physical address of the destination bank"
-            },
-            "bank_routing_number": {
-              "type": "string",
-              "description": "Bank routing number for wire or ACH deposits"
-            },
-            "bank_account_number": {
-              "type": "string",
-              "description": "Account number where customer should send the deposit"
-            },
-            "bank_beneficiary_name": {
-              "type": "string",
-              "description": "Name of the account beneficiary (account holder)"
-            },
-            "bank_beneficiary_address": {
-              "type": "string",
-              "description": "Address of the account beneficiary"
-            },
-            "blockchain_memo": {
-              "type": "string",
-              "description": "Required on-chain memo for memo-supporting blockchains like Stellar and Tron"
-            }
-          },
-          "required": [
-            "payment_rail",
-            "amount",
-            "currency"
-          ]
-        },
-        "TransferReceiptDto": {
-          "type": "object",
-          "properties": {
-            "initial_amount": {
-              "type": "string",
-              "description": "Starting amount of the transfer as a decimal string, in the transfer's fiat currency"
-            },
-            "exchange_fee": {
-              "type": "string",
-              "description": "Platform processing fee as a decimal string, denominated in the transfer's fiat currency"
-            },
-            "subtotal_amount": {
-              "type": "string",
-              "description": "Amount after deducting platform and developer fees, before any gas costs"
-            },
-            "gas_fee": {
-              "type": "string",
-              "description": "Blockchain gas costs as a decimal string (only for crypto withdrawals, known after on-chain confirmation)"
-            },
-            "final_amount": {
-              "type": "string",
-              "description": "Final delivered amount after all fees, as a decimal string in destination currency"
-            },
-            "destination_tx_hash": {
-              "type": "string",
-              "description": "On-chain transaction hash for the final transfer to destination address (when applicable)"
-            }
-          },
-          "required": [
-            "initial_amount",
-            "exchange_fee",
-            "subtotal_amount"
-          ]
-        },
-        "TransferResponseDto": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "Unique identifier for the transfer"
-            },
-            "on_behalf_of": {
-              "type": "string",
-              "description": "The customer ID that this transfer is being executed for"
-            },
-            "amount": {
-              "type": "string",
-              "description": "Transfer amount as a decimal string (e.g., '100.25', '0.1'), denominated in the source currency if fiat, or the fiat currency the source is pegged to"
-            },
-            "state": {
-              "type": "string",
-              "description": "Current status of the transfer in the processing pipeline",
-              "enum": [
-                "awaiting_funds",
-                "in_review",
-                "funds_received",
-                "payment_submitted",
-                "payment_processed",
-                "undeliverable",
-                "returned",
-                "refunded",
-                "error",
-                "canceled"
-              ]
-            },
-            "source": {
-              "$ref": "#/components/schemas/TransferEndpointSideDto",
-              "description": "Source details including payment rail, currency, and addressing information for where funds originate"
-            },
-            "destination": {
-              "$ref": "#/components/schemas/TransferEndpointSideDto",
-              "description": "Destination details including payment rail, currency, and addressing information for where funds will be sent"
-            },
-            "source_deposit_instructions": {
-              "$ref": "#/components/schemas/TransferDepositInstructionsDto",
-              "description": "Instructions for customer to deposit funds to initiate the transfer, when required"
-            },
-            "receipt": {
-              "$ref": "#/components/schemas/TransferReceiptDto",
-              "description": "Detailed breakdown of transfer amounts, fees, and transaction hashes"
-            },
-            "created_at": {
-              "type": "string",
-              "format": "date-time",
-              "description": "Timestamp when the transfer was created"
-            },
-            "updated_at": {
-              "type": "string",
-              "format": "date-time",
-              "description": "Timestamp when the transfer was last updated"
-            }
-          },
-          "required": [
-            "id",
-            "on_behalf_of",
-            "amount",
-            "state",
-            "source",
-            "destination",
-            "created_at",
-            "updated_at"
-          ]
-        },
-        "TransfersListResponseDto": {
-          "type": "object",
-          "properties": {
-            "count": {
-              "type": "number",
-              "description": "Total number of items in data"
-            },
-            "data": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/TransferResponseDto"
+          "address": {
+            "description": "Account holder address",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExternalAccountAddress"
               }
-            }
+            ]
           },
-          "required": [
-            "count",
-            "data"
-          ]
+          "beneficiary_address_valid": {
+            "type": "boolean",
+            "description": "Whether beneficiary address is valid"
+          }
         },
-        "LiquidationAddressResponseDto": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "Unique identifier for the liquidation address"
-            },
-            "chain": {
-              "type": "string",
-              "description": "The blockchain network where this liquidation address exists (e.g., ethereum, solana, polygon)"
-            },
-            "address": {
-              "type": "string",
-              "description": "The cryptocurrency wallet address where customers send funds to trigger liquidation processing"
-            },
-            "currency": {
-              "type": "string",
-              "description": "The cryptocurrency accepted at this liquidation address (e.g., usdc, usdt, dai)"
-            },
-            "external_account_id": {
-              "type": "string",
-              "description": "Reference to the external bank account where converted fiat funds will be sent"
-            },
-            "destination_wire_message": {
-              "type": "string",
-              "description": "Custom message included with wire transfers (up to 140 characters)"
-            },
-            "destination_payment_rail": {
-              "type": "string",
-              "description": "The payment method used to send converted funds to the customer (wire, ach, sepa, etc.)",
-              "enum": [
-                "wire",
-                "ach",
-                "sepa",
-                "crypto",
-                "solana"
-              ]
-            },
-            "destination_currency": {
-              "type": "string",
-              "description": "The fiat currency that crypto deposits will be converted to (usd, eur, etc.)"
-            },
-            "destination_address": {
-              "type": "string",
-              "description": "Cryptocurrency wallet address where funds will be sent"
-            },
-            "blockchain_memo": {
-              "type": "string",
-              "description": "Memo included in blockchain transactions for networks that support memos"
-            },
-            "created_at": {
-              "type": "string",
-              "format": "date-time",
-              "description": "Timestamp when the liquidation address was created"
-            },
-            "updated_at": {
-              "type": "string",
-              "format": "date-time",
-              "description": "Timestamp when the liquidation address was last modified"
-            }
+        "required": [
+          "id",
+          "customer_id",
+          "created_at",
+          "updated_at",
+          "bank_name",
+          "account_name",
+          "account_owner_name",
+          "currency",
+          "account_owner_type",
+          "account_type",
+          "first_name",
+          "last_name",
+          "account"
+        ]
+      },
+      "ExternalAccountsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Number of external accounts returned"
           },
-          "required": [
-            "id",
-            "chain",
-            "address",
-            "currency",
-            "created_at",
-            "updated_at"
-          ]
+          "data": {
+            "description": "List of external accounts",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalAccountResponseDto"
+            }
+          }
         },
-        "LiquidationAddressesListResponseDto": {
-          "type": "object",
-          "properties": {
-            "count": {
-              "type": "number",
-              "description": "Total number of items in data"
-            },
-            "data": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/LiquidationAddressResponseDto"
-              }
-            }
-          },
-          "required": [
-            "count",
-            "data"
-          ]
-        },
-        "LiquidationDrainDestinationDto": {
-          "type": "object",
-          "properties": {
-            "payment_rail": {
-              "type": "string",
-              "description": "The payment network or method used to send converted funds (wire, ach, solana, ethereum, etc.)"
-            },
-            "currency": {
-              "type": "string",
-              "description": "The currency in which funds are sent to the destination (fiat like usd/eur or crypto like usdc)"
-            },
-            "to_address": {
-              "type": "string",
-              "description": "The cryptocurrency wallet address where funds are ultimately delivered (for crypto destinations)"
-            },
-            "external_account_id": {
-              "type": "string",
-              "description": "Reference to the external bank account where the funds are sent"
-            },
-            "imad": {
-              "type": "string",
-              "description": "Input Message Accountability Data (IMAD) identifier for wire transfers, used for tracking"
-            },
-            "trace_number": {
-              "type": "string",
-              "description": "15-digit ACH trace number for tracking and reconciliation purposes"
-            }
-          },
-          "required": [
-            "payment_rail",
-            "currency"
-          ]
-        },
-        "LiquidationDrainResponseDto": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "Unique identifier for the liquidation drain operation"
-            },
-            "amount": {
-              "type": "string",
-              "description": "Amount of funds processed in the drain, as a decimal string (e.g., '100.25', '0.1', '1.234567')"
-            },
-            "currency": {
-              "type": "string",
-              "description": "Currency of the original cryptocurrency deposit that triggered this drain"
-            },
-            "state": {
-              "type": "string",
-              "description": "Current processing status of the liquidation drain operation",
-              "enum": [
-                "in_review",
-                "funds_received",
-                "payment_submitted",
-                "payment_processed",
-                "undeliverable",
-                "returned",
-                "refunded",
-                "error",
-                "canceled"
-              ]
-            },
-            "created_at": {
-              "type": "string",
-              "format": "date-time",
-              "description": "Timestamp when the liquidation drain operation was initiated"
-            },
-            "destination": {
-              "$ref": "#/components/schemas/LiquidationDrainDestinationDto",
-              "description": "Destination information detailing where the converted funds were sent"
-            },
-            "destination_tx_hash": {
-              "type": "string",
-              "description": "Transaction hash of the outbound transfer to the destination"
-            },
-            "deposit_tx_hash": {
-              "type": "string",
-              "description": "Transaction hash of the original cryptocurrency deposit to the liquidation address that triggered this drain"
-            }
-          },
-          "required": [
-            "id",
-            "amount",
-            "currency",
-            "state",
-            "created_at",
-            "destination"
-          ]
-        },
-        "ExternalAccountBankDetails": {
-          "type": "object",
-          "properties": {
-            "routing_number": {
-              "type": "string",
-              "description": "Bank routing number"
-            },
-            "account_number_last_four": {
-              "type": "string",
-              "description": "Last 4 digits of account number"
-            }
-          },
-          "required": [
-            "routing_number",
-            "account_number_last_four"
-          ]
-        },
-        "ExternalAccountAddress": {
-          "type": "object",
-          "properties": {
-            "street_line_1": {
-              "type": "string",
-              "description": "Primary street address"
-            },
-            "street_line_2": {
-              "type": "string",
-              "description": "Secondary street address"
-            },
-            "country": {
-              "type": "string",
-              "description": "Country code"
-            },
-            "state": {
-              "type": "string",
-              "description": "State code"
-            },
-            "city": {
-              "type": "string",
-              "description": "City name"
-            },
-            "postal_code": {
-              "type": "string",
-              "description": "Postal code"
-            }
-          },
-          "required": [
-            "street_line_1",
-            "country",
-            "state",
-            "city",
-            "postal_code"
-          ]
-        },
-        "ExternalAccountResponseDto": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "Unique identifier for external account"
-            },
-            "customer_id": {
-              "type": "string",
-              "description": "Customer ID this account belongs to"
-            },
-            "created_at": {
-              "type": "string",
-              "description": "Creation timestamp"
-            },
-            "updated_at": {
-              "type": "string",
-              "description": "Last update timestamp"
-            },
-            "bank_name": {
-              "type": "string",
-              "description": "Bank name"
-            },
-            "account_name": {
-              "type": "string",
-              "description": "Account name"
-            },
-            "account_owner_name": {
-              "type": "string",
-              "description": "Full name of account owner"
-            },
-            "currency": {
-              "type": "string",
-              "enum": [
-                "usd",
-                "eur",
-                "mxn"
-              ],
-              "description": "Account currency"
-            },
-            "account_owner_type": {
-              "type": "string",
-              "description": "Account owner type"
-            },
-            "account_type": {
-              "type": "string",
-              "description": "Account type"
-            },
-            "first_name": {
-              "type": "string",
-              "description": "First name of account owner"
-            },
-            "last_name": {
-              "type": "string",
-              "description": "Last name of account owner"
-            },
-            "account": {
-              "description": "Bank account details",
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/ExternalAccountBankDetails"
-                }
-              ]
-            },
-            "address": {
-              "description": "Account holder address",
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/ExternalAccountAddress"
-                }
-              ]
-            },
-            "beneficiary_address_valid": {
-              "type": "boolean",
-              "description": "Whether beneficiary address is valid"
-            }
-          },
-          "required": [
-            "id",
-            "customer_id",
-            "created_at",
-            "updated_at",
-            "bank_name",
-            "account_name",
-            "account_owner_name",
-            "currency",
-            "account_owner_type",
-            "account_type",
-            "first_name",
-            "last_name",
-            "account"
-          ]
-        },
-        "ExternalAccountsListResponseDto": {
-          "type": "object",
-          "properties": {
-            "count": {
-              "type": "number",
-              "description": "Number of external accounts returned"
-            },
-            "data": {
-              "description": "List of external accounts",
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/ExternalAccountResponseDto"
-              }
-            }
-          },
-          "required": [
-            "count",
-            "data"
-          ]
-        }
+        "required": [
+          "count",
+          "data"
+        ]
       }
     }
   }
+}
