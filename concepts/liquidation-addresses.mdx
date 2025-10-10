@@ -81,8 +81,7 @@ curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/liquidation_a
     "currency": "usdc",
     "destination_payment_rail": "wire",
     "destination_currency": "usd",
-    "external_account_id": "ext_alice_bank_123",
-    "custom_developer_fee_percent": "0.25"
+    "external_account_id": "ext_alice_bank_123"
   }'
 ```
 
@@ -100,8 +99,7 @@ const liquidationAddress = await fetch(`http://localhost:3000/customers/${custom
     currency: 'usdc',
     destination_payment_rail: 'wire',
     destination_currency: 'usd',
-    external_account_id: 'ext_alice_bank_123',
-    custom_developer_fee_percent: '0.25'
+    external_account_id: 'ext_alice_bank_123'
   })
 });
 
@@ -126,8 +124,7 @@ response = requests.post(
         'currency': 'usdc',
         'destination_payment_rail': 'wire',
         'destination_currency': 'usd',
-        'external_account_id': 'ext_alice_bank_123',
-        'custom_developer_fee_percent': '0.25'
+        'external_account_id': 'ext_alice_bank_123'
     }
 )
 
@@ -260,8 +257,7 @@ Override default fees by setting a custom developer fee percentage:
   "currency": "usdc",
   "destination_payment_rail": "wire",
   "destination_currency": "usd",
-  "external_account_id": "ext_123",
-  "custom_developer_fee_percent": "0.5"
+  "external_account_id": "ext_123"
 }
 ```
 
@@ -398,8 +394,7 @@ async function createCrossBridge(customerId, fromChain, toChain) {
     currency: 'usdc',
     destination_payment_rail: toChain,
     destination_currency: 'usdc',
-    destination_address: customerWallet.address,
-    custom_developer_fee_percent: '0.1' // Lower fee for bridging
+    destination_address: customerWallet.address
   });
 }
 
@@ -419,8 +414,7 @@ async function setupTreasuryLiquidation(customerId, treasuryBankAccount) {
     currency: 'any',        // Any supported currency
     destination_payment_rail: 'wire',
     destination_currency: 'usd',
-    external_account_id: treasuryBankAccount,
-    custom_developer_fee_percent: '0.15'
+    external_account_id: treasuryBankAccount
   });
 }
 ```

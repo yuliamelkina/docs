@@ -10,21 +10,21 @@ This quickstart guide will walk you through the basic setup and your first API c
 ## Prerequisites
 
 Before you begin, make sure you have:
-- Development environment set up
 - Ability to make HTTP requests (curl, Postman, or your preferred tool)
-- Access to the development server running on `localhost:3000`
+- Your API credentials (Api-Key and X-Api-Key)
 
 ## Step 1: Test Your Connection
 
 First, verify you can connect to the API:
 
 ```bash
-curl -X GET http://localhost:3000/ping \
+curl -X GET https://staging.omniwire.com/ping \
   -H "Api-Key: test-api-key" \
+  -H "X-Api-Key: your-usage-key" \
   -H "Content-Type: application/json"
 ```
 
-If successful, you should receive a response confirming the API is accessible.
+If successful, you should receive a 200 OK response confirming the API is accessible.
 
 ## Step 2: Create Your First Customer
 
@@ -33,9 +33,10 @@ Create an individual customer with basic information:
 <CodeGroup>
 
 ```bash cURL
-curl -X POST http://localhost:3000/customers \
+curl -X POST https://staging.omniwire.com/customers \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
+  -H "X-Api-Key: your-usage-key" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "individual",
@@ -60,41 +61,6 @@ curl -X POST http://localhost:3000/customers \
     "endorsements": ["base"],
     "signed_agreement_id": "agr_test_abc123xyz"
   }'
-```
-
-```javascript Node.js
-const response = await fetch('http://localhost:3000/customers', {
-  method: 'POST',
-  headers: {
-    'Api-Key': 'test-api-key',
-    'Tenant-Id': 'your-tenant-uuid',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    type: 'individual',
-    first_name: 'John',
-    last_name: 'Doe',
-    email: 'john.doe@example.com',
-    birth_date: '1990-01-01',
-    residential_address: {
-      street_line_1: '123 Main Street',
-      city: 'Portland',
-      subdivision: 'US-ME',
-      postal_code: '04101',
-      country: 'USA'
-    },
-    identifying_information: [{
-      type: 'ssn',
-      issuing_country: 'USA',
-      number: '123-45-6789'
-    }],
-    endorsements: ['base'],
-    signed_agreement_id: 'agr_test_abc123xyz'
-  })
-});
-
-const customer = await response.json();
-console.log('Customer created:', customer.id);
 ```
 
 </CodeGroup>
@@ -127,30 +93,14 @@ Now create a Solana wallet for your customer:
 <CodeGroup>
 
 ```bash cURL
-curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/wallets \
+curl -X POST https://staging.omniwire.com/customers/cust_1234567890abcdef/wallets \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
+  -H "X-Api-Key: your-usage-key" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{
     "chain": "solana"
   }'
-```
-
-```javascript Node.js
-const walletResponse = await fetch('http://localhost:3000/customers/cust_1234567890abcdef/wallets', {
-  method: 'POST',
-  headers: {
-    'Api-Key': 'test-api-key',
-    'Tenant-Id': 'your-tenant-uuid',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    chain: 'solana'
-  })
-});
-
-const wallet = await walletResponse.json();
-console.log('Wallet created:', wallet.address);
 ```
 
 </CodeGroup>
@@ -179,9 +129,10 @@ console.log('Wallet created:', wallet.address);
 Create a virtual account to receive ACH deposits that automatically convert to USDC:
 
 ```bash
-curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/virtual_accounts \
+curl -X POST https://staging.omniwire.com/customers/cust_1234567890abcdef/virtual_accounts \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
+  -H "X-Api-Key: your-usage-key" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{
     "source": {
@@ -201,9 +152,9 @@ curl -X POST http://localhost:3000/customers/cust_1234567890abcdef/virtual_accou
 Verify your customer and check their KYC status:
 
 ```bash
-curl -X GET http://localhost:3000/customers/cust_1234567890abcdef \
+curl -X GET https://staging.omniwire.com/customers/cust_1234567890abcdef \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid"
+  -H "X-Api-Key: your-usage-key"
 ```
 
 ## What's Next?
@@ -228,12 +179,12 @@ Now that you've created your first customer and wallet, you can:
 ## Development Tips
 
 ### Idempotency Keys
-Always use idempotency keys for create operations in production:
+Always use idempotency keys for create operations:
 
 ```bash
-curl -X POST http://localhost:3000/customers \
+curl -X POST https://staging.omniwire.com/customers \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
+  -H "X-Api-Key: your-usage-key" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{ ... }'

@@ -9,14 +9,14 @@ The Omniwire API uses a multi-header authentication system to ensure secure acce
 
 ## Required Headers
 
-The Omniwire API requires three main headers for authentication and request management:
+The Omniwire API requires the following headers for authentication and request management:
 
 <CardGroup cols={3}>
   <Card title="Api-Key" icon="key">
     Your tenant's unique API key for authentication
   </Card>
-  <Card title="Tenant-Id" icon="building">
-    Your tenant UUID for resource isolation
+  <Card title="X-Api-Key" icon="key">
+    Usage key for API access control
   </Card>
   <Card title="Idempotency-Key" icon="shield">
     UUID for preventing duplicate operations
@@ -31,10 +31,10 @@ The Omniwire API requires three main headers for authentication and request mana
   - **Production**: Your unique tenant API key
 </ParamField>
 
-<ParamField path="Tenant-Id" type="string" required>
-  Your tenant UUID for resource isolation
-  - **Development**: Auto-set to test tenant UUID if not provided
-  - **Production**: Your unique tenant UUID
+<ParamField path="X-Api-Key" type="string" required>
+  Usage key for API access control
+  - **Development**: Automatically handled
+  - **Production**: Your unique usage key
 </ParamField>
 
 <ParamField path="Idempotency-Key" type="string">
@@ -61,18 +61,18 @@ Sandbox environment has **arbitrary rate limits** and requests may be dropped at
 
 For development and testing:
 
-- **Base URL**: `http://localhost:3000`
+- **Base URL**: `https://staging.omniwire.com`
 - **Api-Key**: `"test-api-key"` (automatically set)
-- **Tenant-Id**: Test tenant UUID (automatically set)
-- **Purpose**: Local development and testing
+- **X-Api-Key**: Automatically handled
+- **Purpose**: Development and API testing
 
 ### Production Environment  
 
 For live transactions:
 
 - **Base URL**: `https://api.omniwire.com`
-- **Api-Key**: Your unique tenant API key
-- **Tenant-Id**: Your unique tenant UUID
+- **Api-Key**: Your unique API key
+- **X-Api-Key**: Your unique usage key
 - **Purpose**: Live transaction processing
 
 ## Making Authenticated Requests
@@ -82,9 +82,9 @@ For live transactions:
 Include all required headers in your requests:
 
 ```bash
-curl -X GET http://localhost:3000/customers \
+curl -X GET https://staging.omniwire.com/customers \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
+  -H "X-Api-Key: your-usage-key" \
   -H "Content-Type: application/json"
 ```
 
@@ -93,9 +93,9 @@ curl -X GET http://localhost:3000/customers \
 For operations that create or modify resources:
 
 ```bash
-curl -X POST http://localhost:3000/customers \
+curl -X POST https://staging.omniwire.com/customers \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
+  -H "X-Api-Key: your-usage-key" \
   -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -d '{
@@ -105,103 +105,33 @@ curl -X POST http://localhost:3000/customers \
     "email": "john.doe@example.com"
   }'
 ```
-
-### SDK Integration
-
-<CodeGroup>
-
-```javascript Node.js
-const omniwire = require('@omniwire/node-sdk');
-
-const client = new omniwire.Client({
-  apiKey: 'test-api-key',
-  tenantId: 'your-tenant-uuid',
-  baseURL: 'http://localhost:3000'
-});
-
-// All requests include authentication headers automatically
-const customers = await client.customers.list();
-```
-
-```python Python
-import omniwire
-
-omniwire.api_key = 'test-api-key'
-omniwire.tenant_id = 'your-tenant-uuid'
-omniwire.base_url = 'http://localhost:3000'
-
-# All requests include authentication headers automatically
-customers = omniwire.Customer.list()
-```
-
-```php PHP
-require_once 'vendor/autoload.php';
-
-\Omniwire\Omniwire::setApiKey('test-api-key');
-\Omniwire\Omniwire::setTenantId('your-tenant-uuid');
-\Omniwire\Omniwire::setBaseUrl('http://localhost:3000');
-
-// All requests include authentication headers automatically
-$customers = \Omniwire\Customer::all();
-```
-
-</CodeGroup>
 
 ## Testing Authentication
 
 ### Quick Test Request
 
-Test your authentication setup with a simple customer list request:
+Test your authentication setup with a simple ping request:
 
-<CodeGroup>
-
-```bash cURL
-curl -X GET http://localhost:3000/customers \
+```bash
+curl -X GET https://staging.omniwire.com/ping \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
+  -H "X-Api-Key: your-usage-key" \
   -H "Content-Type: application/json"
 ```
 
-```javascript Node.js
-const client = new omniwire.Client({
-  apiKey: 'test-api-key',
-  tenantId: 'your-tenant-uuid'
-});
-
-try {
-  const customers = await client.customers.list();
-  console.log('Authentication successful, found', customers.length, 'customers');
-} catch (error) {
-  console.error('Authentication failed:', error.message);
-}
-```
-
-```python Python
-import omniwire
-
-omniwire.api_key = 'test-api-key'
-omniwire.tenant_id = 'your-tenant-uuid'
-
-try:
-    customers = omniwire.Customer.list()
-    print(f"Authentication successful, found {len(customers)} customers")
-except omniwire.error.AuthenticationError as e:
-    print(f"Authentication failed: {e}")
-```
-
-</CodeGroup>
+If authentication is successful, you should receive a 200 OK response.
 
 ## Idempotency
 
 ### How Idempotency Works
 
-Idempotency ensures that retrying a request produces the same result, preventing accidental duplicate operations:
+Idempotency prevents duplicate operations by detecting when the same request is made multiple times. When you retry a request with the same idempotency key, the system will return an error indicating that the operation has already been processed:
 
 ```bash
 # First request - creates a new customer
-curl -X POST http://localhost:3000/customers \
+curl -X POST https://staging.omniwire.com/customers \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
+  -H "X-Api-Key: your-usage-key" \
   -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -d '{
@@ -211,10 +141,10 @@ curl -X POST http://localhost:3000/customers \
     "email": "john.doe@example.com"
   }'
 
-# Retry with same key - returns the same customer
-curl -X POST http://localhost:3000/customers \
+# Retry with same key - returns an error
+curl -X POST https://staging.omniwire.com/customers \
   -H "Api-Key: test-api-key" \
-  -H "Tenant-Id: your-tenant-uuid" \
+  -H "X-Api-Key: your-usage-key" \
   -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -d '{
@@ -263,19 +193,17 @@ const operationKey = `customer-creation-${Date.now()}-${uuidv4()}`;
 <Accordion title="Invalid Api-Key">
 ```json
 {
-  "statusCode": 403,
+  "statusCode": 401,
   "message": "Invalid API key provided",
-  "error": "Forbidden"
+  "error": "Unauthorized"
 }
 ```
 </Accordion>
 
-<Accordion title="Missing Tenant-Id">
+<Accordion title="Missing X-Api-Key">
 ```json
 {
-  "statusCode": 400,
-  "message": "Tenant-Id header is required",
-  "error": "Bad Request"
+  "message": "Forbidden"
 }
 ```
 </Accordion>
@@ -290,58 +218,18 @@ const operationKey = `customer-creation-${Date.now()}-${uuidv4()}`;
 ```
 </Accordion>
 
-### Error Handling in Code
-
-<CodeGroup>
-
-```javascript Node.js
-try {
-  const customer = await client.customers.create({
-    type: 'individual',
-    first_name: 'John',
-    last_name: 'Doe',
-    email: 'john.doe@example.com'
-  });
-} catch (error) {
-  if (error.status === 401) {
-    console.error('Authentication failed - check Api-Key');
-  } else if (error.status === 400) {
-    console.error('Bad request - check required headers');
-  } else if (error.status === 409) {
-    console.error('Idempotency conflict - request already processed');
-  }
-}
-```
-
-```python Python
-try:
-    customer = omniwire.Customer.create({
-        'type': 'individual',
-        'first_name': 'John',
-        'last_name': 'Doe',
-        'email': 'john.doe@example.com'
-    })
-except omniwire.error.AuthenticationError as e:
-    print("Authentication failed - check Api-Key")
-except omniwire.error.InvalidRequestError as e:
-    print("Bad request - check required headers")
-except omniwire.error.IdempotencyError as e:
-    print("Idempotency conflict - request already processed")
-```
-
-</CodeGroup>
 
 ## Environment Configuration
 
 ### Development Setup
 
-For local development, create a `.env` file:
+For development, create a `.env` file:
 
 ```bash
 # .env file
 OMNIWIRE_API_KEY=test-api-key
-OMNIWIRE_TENANT_ID=your-test-tenant-uuid
-OMNIWIRE_BASE_URL=http://localhost:3000
+OMNIWIRE_X_API_KEY=your-usage-key
+OMNIWIRE_BASE_URL=https://staging.omniwire.com
 ```
 
 ### Production Configuration
@@ -351,7 +239,7 @@ For production deployment:
 ```bash
 # Production environment variables
 OMNIWIRE_API_KEY=your-production-api-key
-OMNIWIRE_TENANT_ID=your-production-tenant-uuid
+OMNIWIRE_X_API_KEY=your-production-usage-key
 OMNIWIRE_BASE_URL=https://api.omniwire.com
 ```
 
@@ -363,12 +251,12 @@ OMNIWIRE_BASE_URL=https://api.omniwire.com
 const config = {
   development: {
     apiKey: process.env.OMNIWIRE_API_KEY || 'test-api-key',
-    tenantId: process.env.OMNIWIRE_TENANT_ID,
-    baseURL: process.env.OMNIWIRE_BASE_URL || 'http://localhost:3000'
+    xApiKey: process.env.OMNIWIRE_X_API_KEY,
+    baseURL: process.env.OMNIWIRE_BASE_URL || 'https://staging.omniwire.com'
   },
   production: {
     apiKey: process.env.OMNIWIRE_API_KEY,
-    tenantId: process.env.OMNIWIRE_TENANT_ID,
+    xApiKey: process.env.OMNIWIRE_X_API_KEY,
     baseURL: process.env.OMNIWIRE_BASE_URL || 'https://api.omniwire.com'
   }
 };
@@ -386,12 +274,12 @@ class OmniwireConfig:
         
         if self.env == 'production':
             self.api_key = os.getenv('OMNIWIRE_API_KEY')
-            self.tenant_id = os.getenv('OMNIWIRE_TENANT_ID')
+            self.x_api_key = os.getenv('OMNIWIRE_X_API_KEY')
             self.base_url = os.getenv('OMNIWIRE_BASE_URL', 'https://api.omniwire.com')
         else:
             self.api_key = os.getenv('OMNIWIRE_API_KEY', 'test-api-key')
-            self.tenant_id = os.getenv('OMNIWIRE_TENANT_ID')
-            self.base_url = os.getenv('OMNIWIRE_BASE_URL', 'http://localhost:3000')
+            self.x_api_key = os.getenv('OMNIWIRE_X_API_KEY')
+            self.base_url = os.getenv('OMNIWIRE_BASE_URL', 'https://staging.omniwire.com')
 ```
 
 </CodeGroup>
@@ -403,9 +291,9 @@ class OmniwireConfig:
 <Warning>
 **Never expose API keys in client-side code**
 - Store keys in environment variables
-- Use separate keys for different environments  
-- Rotate keys regularly
-- Monitor key usage for anomalies
+- Use separate keys for different environments
+- Never commit keys to version control
+- Restrict API key access to authorized personnel only
 </Warning>
 
 ### Request Security
@@ -418,16 +306,18 @@ const idempotencyKey = crypto.randomUUID();
 // Use HTTPS in production
 const baseURL = process.env.NODE_ENV === 'production' 
   ? 'https://api.omniwire.com'
-  : 'http://localhost:3000';
+  : 'https://staging.omniwire.com';
 
 // Set appropriate timeouts
-const client = new omniwire.Client({
-  apiKey: process.env.OMNIWIRE_API_KEY,
-  tenantId: process.env.OMNIWIRE_TENANT_ID,
-  baseURL,
+const requestOptions = {
   timeout: 30000, // 30 second timeout
-  maxRetries: 3
-});
+  maxRetries: 3,
+  headers: {
+    'Api-Key': process.env.OMNIWIRE_API_KEY,
+    'X-Api-Key': process.env.OMNIWIRE_X_API_KEY,
+    'Content-Type': 'application/json'
+  }
+};
 ```
 
 ## Next Steps
