@@ -779,8 +779,7 @@
                     "currency": "usdc",
                     "destination_payment_rail": "wire",
                     "destination_currency": "usd",
-                    "external_account_id": "ext_123",
-                    "custom_developer_fee_percent": "0.25"
+                    "external_account_id": "ext_123"
                   }
                 },
                 "crypto_to_crypto": {
