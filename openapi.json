@@ -317,6 +317,67 @@
         ]
       }
     },
+    "/wallets/{walletId}/history": {
+      "get": {
+        "operationId": "WalletsController_listHistory",
+        "parameters": [
+          {
+            "name": "walletId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "The number of items to return (default of 10, max of 100)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "updated_after_ms",
+            "required": false,
+            "in": "query",
+            "description": "This is a unix timestamp in milliseconds. If this is specified, objects updated AFTER the specified timestamp will be returned",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "updated_before_ms",
+            "required": false,
+            "in": "query",
+            "description": "This is a unix timestamp in milliseconds. If this is specified, objects updated BEFORE the specified timestamp will be returned",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletHistoryListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get transaction history for a Bridge Wallet",
+        "tags": [
+          "Wallets"
+        ]
+      }
+    },
     "/customers/{customerId}/virtual_accounts": {
       "post": {
         "operationId": "VirtualAccountsController_create",
@@ -470,6 +531,128 @@
           }
         },
         "summary": "Get virtual account by id",
+        "tags": [
+          "Virtual Accounts"
+        ]
+      }
+    },
+    "/customers/{customerId}/virtual_accounts/{virtualAccountId}/history": {
+      "get": {
+        "operationId": "VirtualAccountsController_listHistory",
+        "parameters": [
+          {
+            "name": "virtualAccountId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
+          },
+          {
+            "name": "deposit_id",
+            "required": false,
+            "in": "query",
+            "description": "The deposit id associated with the events. Cannot be passed if deposit_ids is also passed",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deposit_ids",
+            "required": false,
+            "in": "query",
+            "description": "The deposit ids associated with the events. Pass a list of deposit ids like \"deposit_ids[]=id1&deposit_ids[]=id2\". Cannot be passed if deposit_id is also passed",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "tx_hash",
+            "required": false,
+            "in": "query",
+            "description": "The hash of the transaction",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "event_type",
+            "required": false,
+            "in": "query",
+            "description": "Filter history by event type",
+            "schema": {
+              "enum": [
+                "funds_received",
+                "payment_submitted",
+                "payment_processed",
+                "in_review",
+                "refund",
+                "microdeposit",
+                "account_update",
+                "deactivation",
+                "activation"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "The number of items to return (default of 10, max of 100)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "starting_after",
+            "required": false,
+            "in": "query",
+            "description": "This is an event id. If this is specified, the next page that starts with an event right AFTER the specified event id on the event timeline, which is always ordered from the newest to the oldest by creation time, will be returned. This also implies that events older than the specified event id will be returned (shouldn't be set if ending_before is set)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ending_before",
+            "required": false,
+            "in": "query",
+            "description": "This is an event id. If this is specified, the previous page that ends with an event right BEFORE the specified event id on the event timeline, which is always ordered from the newest to the oldest by creation time, will be returned. This also implies that events newer than the specified event id will be returned (shouldn't be set if starting_after is set)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VirtualAccountHistoryListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "History of activity for a Virtual Account",
         "tags": [
           "Virtual Accounts"
         ]
@@ -1733,6 +1916,119 @@
           "data"
         ]
       },
+      "WalletTransactionEndpointDto": {
+        "type": "object",
+        "properties": {
+          "payment_rail": {
+            "type": "string",
+            "description": "The payment rail used for this endpoint of the transaction",
+            "enum": [
+              "ach",
+              "wire",
+              "ach_push",
+              "ach_same_day",
+              "arbitrum",
+              "avalanche_c_chain",
+              "base",
+              "ethereum",
+              "optimism",
+              "pix",
+              "polygon",
+              "solana",
+              "spei",
+              "stellar"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "description": "The currency for this endpoint of the transaction",
+            "enum": [
+              "usdb",
+              "usdc",
+              "usdt",
+              "dai",
+              "usd",
+              "pyusd"
+            ]
+          }
+        },
+        "required": [
+          "payment_rail",
+          "currency"
+        ]
+      },
+      "WalletTransactionResponseDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "Amount of the transaction, represented as a dollar denominated string. Examples include \"100.25\", \"0.1\", \"1.234567\", \"1.01\" etc.",
+            "example": "100.25"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Transaction creation timestamp",
+            "format": "date-time",
+            "example": "2023-11-07T05:31:56Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "Transaction last update timestamp",
+            "format": "date-time",
+            "example": "2023-11-07T05:31:56Z"
+          },
+          "customer_id": {
+            "type": "string",
+            "description": "A UUID that uniquely identifies the customer associated with this transaction",
+            "example": "cust_abc123"
+          },
+          "source": {
+            "description": "Source endpoint of the transaction (where funds are coming from)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletTransactionEndpointDto"
+              }
+            ]
+          },
+          "destination": {
+            "description": "Destination endpoint of the transaction (where funds are going to)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletTransactionEndpointDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "amount",
+          "created_at",
+          "updated_at",
+          "customer_id",
+          "source",
+          "destination"
+        ]
+      },
+      "WalletHistoryListResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total number of items in data",
+            "example": 123
+          },
+          "data": {
+            "description": "Array of wallet transactions",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletTransactionResponseDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "data"
+        ]
+      },
       "VirtualAccountSourceDto": {
         "type": "object",
         "properties": {
@@ -1963,6 +2259,312 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/VirtualAccountResponseDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "data"
+        ]
+      },
+      "VirtualAccountEventSourceDto": {
+        "type": "object",
+        "properties": {
+          "payment_rail": {
+            "type": "string",
+            "description": "The payment rail used for this transaction",
+            "enum": [
+              "ach_push",
+              "pix",
+              "sepa",
+              "spei",
+              "wire"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "(ACH and SPEI only) The description of the deposit that the customer sent"
+          },
+          "sender_name": {
+            "type": "string",
+            "description": "(ACH, SEPA, and SPEI only) The name of the business or individual who initiated the transaction"
+          },
+          "sender_bank_routing_number": {
+            "type": "string",
+            "description": "(ACH only) The routing number of the entity that initiated this ACH transaction"
+          },
+          "trace_number": {
+            "type": "string",
+            "description": "(ACH only) The unique, a 15-digit number associated with each ACH transaction that is used for tracking and reconciling transactions"
+          },
+          "estimated_arrival_date": {
+            "type": "string",
+            "description": "Estimated arrival date"
+          },
+          "bank_routing_number": {
+            "type": "string",
+            "description": "(Wire only) The routing number of the bank that sent the wire to the Virtual Account"
+          },
+          "bank_name": {
+            "type": "string",
+            "description": "(Wire only) The name of the bank that sent the wire"
+          },
+          "bank_beneficiary_name": {
+            "type": "string",
+            "description": "(Wire only) The beneficiary name of this wire"
+          },
+          "bank_beneficiary_address": {
+            "type": "string",
+            "description": "(Wire only) The beneficiary address of this wire"
+          },
+          "originator_name": {
+            "type": "string",
+            "description": "(Wire only) The originator name of this wire"
+          },
+          "originator_address": {
+            "type": "string",
+            "description": "(Wire only) The originator address of this wire"
+          },
+          "wire_message": {
+            "type": "string",
+            "description": "(Wire only) The memo for this wire"
+          },
+          "imad": {
+            "type": "string",
+            "description": "(Wire only) The IMAD of a wire transfer, if available",
+            "pattern": "[a-z0-9]*",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "bic": {
+            "type": "string",
+            "description": "(SEPA only) The BIC of the bank that initiated this transaction"
+          },
+          "iban": {
+            "type": "string",
+            "description": "(SEPA only) The full IBAN of the account that initiated this transaction"
+          },
+          "iban_last_4": {
+            "type": "string",
+            "description": "(SEPA only) The last 4 digits of the IBAN of the account that initiated this transaction"
+          },
+          "reference": {
+            "type": "string",
+            "description": "(SEPA and SPEI only) The SEPA/SPEI (concepto de pago) reference field set by the initiator of this transaction"
+          },
+          "payment_scheme": {
+            "type": "string",
+            "description": "(SEPA only) The payment scheme used for this transaction, such as SEPA Credit Transfer or SEPA Instant",
+            "enum": [
+              "reversed_payment",
+              "sepa_credit",
+              "sepa_instant"
+            ]
+          },
+          "uetr": {
+            "type": "string",
+            "description": "The UETR of this SEPA transaction, for tracing purposes.",
+            "minLength": 36,
+            "maxLength": 36
+          },
+          "clabe": {
+            "type": "string",
+            "description": "(SPEI only) The CLABE (account number) of the account that initiated this transaction"
+          },
+          "tracking_number": {
+            "type": "string",
+            "description": "(SPEI only) The clave de rastreo or tracking number of the SPEI transaction"
+          }
+        },
+        "required": [
+          "payment_rail"
+        ]
+      },
+      "VirtualAccountEventReceiptDto": {
+        "type": "object",
+        "properties": {
+          "initial_amount": {
+            "type": "string",
+            "description": "The initial amount of the transfer, represented as a decimal string. Examples include \"100.25\", \"0.1\", \"1.234567\", \"1.01\" etc. It's denominated in the transfer's fiat currency (see the top-level `currency` field for more info)",
+            "example": "100.25"
+          },
+          "exchange_fee": {
+            "type": "string",
+            "description": "The fee, expressed as a decimal string, represents the amount Bridge charges for facilitating the transfer. This is the final amount to take out of what is ultimately received by your customer, not a percentage. It's denominated in the transfer's fiat currency (see top-level `currency` field for more info).",
+            "example": "2.50"
+          },
+          "subtotal_amount": {
+            "type": "string",
+            "description": "The initial amount of the transfer less fixed fees (including the developer_fee and exchange_fee). Examples include \"100.25\", \"0.1\", \"1.234567\", \"1.01\" etc. It's denominated in the transfer's fiat currency (see top-level `currency` field for more info).",
+            "example": "97.75"
+          },
+          "gas_fee": {
+            "type": "string",
+            "description": "The fee, expressed as a decimal string. It's deducted from the withdrawn amount to pay for gas. Only nonzero to crypto withdrawals that cost gas (e.g. USDT or DAI), and only known when the transaction is confirmed on-chain. Will be missing if not yet known. It's denominated in the fiat currency to which the destination currency is pegged.",
+            "example": "0.50"
+          },
+          "final_amount": {
+            "type": "string",
+            "description": "The final amount of the transfer, expressed as a decimal string, equal to the subtotal_amount minus any gas fees. If the gas fee is not known, this field will be missing. Examples include \"100.25\", \"0.1\", \"1.234567\", \"1.01\" etc. It's denominated in the destination currency if that is a fiat currency or the fiat currency to which the destination currency is pegged.",
+            "example": "97.25"
+          },
+          "source_tx_hash": {
+            "type": "string",
+            "description": "The hash of the on-chain deposit to the source address, where applicable"
+          },
+          "destination_tx_hash": {
+            "type": "string",
+            "description": "The hash of the on-chain transfer to the destination address, where applicable"
+          },
+          "exchange_rate": {
+            "type": "string",
+            "description": "The effective exchange rate can be calculated by dividing the converted amount by the amount available for conversion after deducting the developer fee. This rate includes a currency conversion spread and is subject to a rounding precision loss during the calculation. Currently it's populated for SEPA onramp/offramp transfers only."
+          },
+          "url": {
+            "type": "string",
+            "description": "The URL of a user-facing copy of the receipt."
+          },
+          "remaining_prefunded_balance": {
+            "type": "string",
+            "description": "For Prefunded Accounts, this value will represent the remaining account balance after the transfer."
+          }
+        },
+        "required": [
+          "initial_amount",
+          "exchange_fee",
+          "subtotal_amount"
+        ]
+      },
+      "VirtualAccountEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A UUID that uniquely identifies a resource",
+            "pattern": "[a-z0-9]*",
+            "minLength": 1,
+            "maxLength": 42
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of activity",
+            "enum": [
+              "funds_scheduled",
+              "funds_received",
+              "payment_submitted",
+              "payment_processed",
+              "in_review",
+              "refund",
+              "microdeposit",
+              "account_update",
+              "deactivation",
+              "activation"
+            ]
+          },
+          "customer_id": {
+            "type": "string",
+            "description": "The id of the Bridge customer that this Virtual Account event belongs to",
+            "pattern": "[a-z0-9]*",
+            "minLength": 1,
+            "maxLength": 42
+          },
+          "virtual_account_id": {
+            "type": "string",
+            "description": "The id of the Virtual Account that this Virtual Account event belongs to",
+            "pattern": "[a-z0-9]*",
+            "minLength": 1,
+            "maxLength": 42
+          },
+          "amount": {
+            "type": "string",
+            "description": "Amount for that event, represented as a dollar denominated string. Examples include \"100.25\", \"0.1\", \"1.234567\" etc. For \"incoming\" events such as funds_received or under_review, this is the initial amount received. For \"outgoing\" events such as payment_submitted and payment_processed, this is the amount of funds sent to the destination. For non-transactional events such as account_update, this will be zero.",
+            "example": "123.45"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency of the amount",
+            "enum": [
+              "usdb",
+              "usdc",
+              "usdt",
+              "dai",
+              "usd",
+              "pyusd"
+            ]
+          },
+          "exchange_fee_amount": {
+            "type": "string",
+            "description": "Amount of the exchange fee if any, represented as a dollar denominated string. Examples include \"100.25\", \"0.1\", \"1.234567\" etc.",
+            "example": "2.50"
+          },
+          "subtotal_amount": {
+            "type": "string",
+            "description": "Amount of the subtotal, represented as a dollar denominated string. Examples include \"100.25\", \"0.1\", \"1.234567\" etc.",
+            "example": "120.95"
+          },
+          "gas_fee": {
+            "type": "string",
+            "description": "Amount of the gas fee if any, represented as a dollar denominated string. Examples include \"100.25\", \"0.1\", \"1.234567\" etc.",
+            "example": "0.50"
+          },
+          "deposit_id": {
+            "type": "string",
+            "description": "The id of the deposit related to this event. This id can be used to link multiple events to the same transaction. Omitted for some `refund` cases."
+          },
+          "destination_tx_hash": {
+            "type": "string",
+            "description": "The hash of the on-chain transfer to the destination address"
+          },
+          "destination_payment_rail": {
+            "type": "string",
+            "description": "The destination payment rail where the funds are deposited to"
+          },
+          "source": {
+            "description": "Source payment rail details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VirtualAccountEventSourceDto"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Time of creation of the event",
+            "format": "date-time"
+          },
+          "receipt": {
+            "description": "Receipt information of a virtual account event. Available for drain and payment_processed events.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VirtualAccountEventReceiptDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "customer_id",
+          "virtual_account_id",
+          "amount",
+          "currency",
+          "created_at"
+        ]
+      },
+      "VirtualAccountHistoryListResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "The number of events returned",
+            "example": 10
+          },
+          "data": {
+            "description": "Array of Virtual Account events",
+            "minItems": 0,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VirtualAccountEventResponseDto"
             }
           }
         },
