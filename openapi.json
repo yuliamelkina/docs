@@ -317,7 +317,7 @@
         ]
       }
     },
-    "/wallets/{walletId}/history": {
+    "/customers/{customerId}/wallets/{walletId}/history": {
       "get": {
         "operationId": "WalletsController_listHistory",
         "parameters": [
@@ -358,6 +358,17 @@
             "schema": {
               "type": "number"
             }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "A UUID that uniquely identifies a resource",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 42
+            }
           }
         ],
         "responses": {
@@ -372,7 +383,7 @@
             }
           }
         },
-        "summary": "Get transaction history for a Bridge Wallet",
+        "summary": "Get transaction history for a wallet",
         "tags": [
           "Wallets"
         ]
@@ -561,10 +572,9 @@
             }
           },
           {
-            "name": "deposit_ids",
-            "required": false,
+            "name": "deposit_ids[]",
+            "required": true,
             "in": "query",
-            "description": "The deposit ids associated with the events. Pass a list of deposit ids like \"deposit_ids[]=id1&deposit_ids[]=id2\". Cannot be passed if deposit_id is also passed",
             "schema": {
               "type": "array",
               "items": {
@@ -626,6 +636,18 @@
             "description": "This is an event id. If this is specified, the previous page that ends with an event right BEFORE the specified event id on the event timeline, which is always ordered from the newest to the oldest by creation time, will be returned. This also implies that events newer than the specified event id will be returned (shouldn't be set if starting_after is set)",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "deposit_ids",
+            "required": false,
+            "in": "query",
+            "description": "The deposit ids associated with the events. Pass a list of deposit ids like \"deposit_ids[]=id1&deposit_ids[]=id2\". Cannot be passed if deposit_id is also passed",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           },
           {
@@ -938,8 +960,7 @@
                       "currency": "usdc",
                       "destination_payment_rail": "wire",
                       "destination_currency": "usd",
-                      "external_account_id": "ext_123",
-                      "custom_developer_fee_percent": "0.25"
+                      "external_account_id": "ext_123"
                     }
                   },
                   {
@@ -1923,6 +1944,7 @@
             "type": "string",
             "description": "The payment rail used for this endpoint of the transaction",
             "enum": [
+              "wallet",
               "ach",
               "wire",
               "ach_push",
